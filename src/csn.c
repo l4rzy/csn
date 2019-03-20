@@ -1,10 +1,6 @@
 #include "internal.h"
-#include "csn.h"
 
-/* static vars
- */
-static csn_result_t *head;
-
+/* === STATIC FUNCTIONS === */
 /* write curl output to buffer that's ready to be used by tidy
  */
 static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
@@ -14,28 +10,7 @@ static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
     return r;
 }
 
-csn_result_t *parse_search_result(TidyDoc doc, TidyNode tnod, int indent)
-{
-    TidyNode child;
-    for (child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
-        ctmbstr name = tidyNodeGetName(child);
-        if (name && !strcmp(name, "table")) {
-            logs("body here\n");
-        }
-        // else {
-        //     /* if it doesn't have a name, then it's probably text, cdata, etc... */
-        //     TidyBuffer buf;
-        //     tidyBufInit(&buf);
-        //     tidyNodeGetText(doc, child, &buf);
-        //     //printf("%*.*s\n", indent, indent, buf.bp?(char *)buf.bp:"");
-        //     tidyBufFree(&buf);
-        // }
-        parse_search_result(doc, child, indent + 4); /* recursive */
-    }
-    return NULL;
-}
-
-static char *build_url(const char *str, int options, int limit) {
+static char *build_search_url(const char *str, int options, int limit) {
     char temp[1024]; //TODO: fix this
     const char *search_fmt = CSN_SEARCH_URL"?s=%s&mode=%s&order=%s&cat=%s";
 
@@ -44,6 +19,7 @@ static char *build_url(const char *str, int options, int limit) {
     return strdup(temp);
 }
 
+/* === API PUBLIC FUNCTIONS === */
 csn_ctx_t *csn_init() {
     csn_ctx_t *ctx = xalloc(sizeof(csn_ctx_t));
     bzero(&ctx->docbuf, sizeof(ctx->docbuf));
@@ -69,8 +45,10 @@ csn_ctx_t *csn_init() {
 
 int csn_free(csn_ctx_t *ctx) {
     curl_easy_cleanup(ctx->curl);
-    tidyBufFree(&ctx->docbuf);
-    tidyBufFree(&ctx->tidy_errbuf);
+    if (&ctx->docbuf)
+        tidyBufFree(&ctx->docbuf);
+    if (&ctx->tidy_errbuf)
+        tidyBufFree(&ctx->tidy_errbuf);
     tidyRelease(ctx->tdoc);
 
     logs("Done freeing context\n");
@@ -78,17 +56,15 @@ int csn_free(csn_ctx_t *ctx) {
 }
 
 csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit) {
-    csn_result_t *ret = malloc(sizeof(csn_result_t));
-    if (!ret) {
-        fatals("Could not allocate memory!\n");
-    }
+    csn_result_t *ret = xalloc(sizeof(csn_result_t));
     // build search url
     char *search_string = curl_easy_escape(ctx->curl, str, strlen(str));
-    char *surl = build_url(search_string, options, limit);
+    char *surl = build_search_url(search_string, options, limit);
 
     curl_easy_setopt(ctx->curl, CURLOPT_URL, surl);
     curl_free(search_string);
     free(surl);
+    // perform the curl
     ctx->err = curl_easy_perform(ctx->curl);
     if (!ctx->err) {
         ctx->err = tidyParseBuffer(ctx->tdoc, &ctx->docbuf); /* parse the input */
@@ -106,4 +82,16 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
         fatalf("Could not get data from `%s`\n", surl);
     }
     return ret;
+}
+
+csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type, int limit) {
+    return NULL;
+}
+
+csn_song_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_song_t *s) {
+    return NULL;
+}
+
+csn_album_info_t *csn_fetch_album_info(csn_ctx_t *ctx, csn_album_t *a) {
+    return NULL;
 }

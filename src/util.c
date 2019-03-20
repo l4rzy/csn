@@ -17,8 +17,8 @@ void *_xcalloc(size_t size) {
     return ret;
 }
 
-void *_xrealloc(void *ptr, size_t size) {
-    ptr = realloc(ptr, size);
+void *_xrealloc(void *ptr, size_t new_size) {
+    ptr = realloc(ptr, new_size);
     if (!ptr) {
         fatals("Could not allocate memory\n");
     }
@@ -65,6 +65,7 @@ char *csn_buf_append(buf_t *buf, const char *str) {
 
 int csn_buf_free(buf_t *buf) {
     free(buf->str);
+    free(buf);
     return 0;
 }
 
@@ -79,8 +80,9 @@ csn_result_t *csn_result_new(bool is_song) {
 
 int csn_result_free(csn_result_t *head) {
     csn_result_t *r = head;
-    while (r->next != NULL) {
+    while (r) {
         free(r);
+        r = r->next;
     }
 
     return 0;

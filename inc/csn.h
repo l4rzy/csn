@@ -1,16 +1,15 @@
 #ifndef _CSN_H_
 #define _CSN_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdio.h>
 #include <stddef.h>
 #include <tidy.h>
 #include <tidybuffio.h>
 #include <curl/curl.h>
-
-typedef enum {
-    false,
-    true
-} bool;
+#include <stdbool.h>
 
 enum {
     CSN_TYPE_SONG,
@@ -102,16 +101,23 @@ typedef struct _csn_result_t {
     struct _csn_result_t *next; // this is a recursive structure
 } csn_result_t;
 
-
+/* constructor, destructor
+ */
 csn_ctx_t *csn_init();
 int csn_free(csn_ctx_t *);
 
-csn_result_t *csn_search(csn_ctx_t *, const char *, int, int);
-csn_result_t *csn_fetch_hot(csn_ctx_t *, int, int);
-csn_song_info_t *csn_fetch_song_info(csn_song_t *);
-csn_album_info_t *csn_fetch_album_info(csn_album_t *);
-
-/* errors
+/* API functions
  */
+csn_result_t *csn_search(csn_ctx_t *, const char *, int, int);
+// csn_result_t *csn_fetch_hot(csn_ctx_t *, int, int);
+// csn_song_info_t *csn_fetch_song_info_url(csn_ctx_t *, buf_t);
+// csn_album_info_t *csn_fetch_album_info_url(csn_ctx_t *, buf_t);
+// csn_song_info_t *csn_fetch_song_info(csn_ctx_t *, csn_song_t *);
+// csn_album_info_t *csn_fetch_album_info(csn_ctx_t *, csn_album_t *);
+// csn_song_info_t **csn_batch_fetch_song_info(csn_ctx_t *, csn_album_info_t *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -46,6 +46,11 @@
 #define CSN_S_SEARCH_CATEGORY_BEAT              "playback"
 #define CSN_S_SEARCH_CATEGORY_VIDEO             "video"
 
+typedef struct _csn_xpath_t {
+    char *name;
+    int index;
+    struct _csn_xpath_t *next;
+} csn_xpath_t;
 
 void *_xalloc(size_t);
 void *_xcalloc(size_t);
@@ -56,11 +61,13 @@ void *_xrealloc(void *, size_t);
 #define xrealloc(x, y) _xrealloc(x, y)
 
 buf_t *csn_buf_new(size_t);
+buf_t *csn_buf_from_str(const char *);
 char *csn_buf_write(buf_t *, const char *);
 char *csn_buf_append(buf_t *, const char *);
 int csn_buf_free(buf_t *);
 
-#define NEW(type) \
-    type *ret = xalloc(sizeof(type))
+/* parsing functions
+ */
+csn_result_t *parse_search_result(TidyDoc, TidyNode, int);
 
 #endif
