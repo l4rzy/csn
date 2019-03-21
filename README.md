@@ -9,8 +9,8 @@
 
 ## Build
 ```sh
-$ make
-$ make test
+$ meson build
+$ cd build && ninja
 ```
 
 ## Run tests
