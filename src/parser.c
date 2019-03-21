@@ -19,27 +19,18 @@ static bool node_ok(TidyNode node) {
 
 /* using DFS,
  * non-recursive algorithm
+ * the technique here is to maintain two list, one for queued 1st gen childtren
+ * and one for 2nd children
  */
+
+
 static TidyNode traverse_to_node(TidyNode root) {
-    TidyNode child, temp, node;
-    node = root;
-traverse_loop:
-    if (node_ok(node)) {
-        return node;
-    }
-
-    child = tidyGetChild(node);
-    if (!child) {
-        goto traverse_exit;
-    }
-    else {
-        node = child;
-        goto traverse_loop;
-    }
-
-traverse_exit:
     logs("No result\n");
     return NULL;
+}
+
+static TidyNode traverse_to_xpath(TidyDoc doc) {
+
 }
 
 

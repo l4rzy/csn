@@ -18,18 +18,18 @@ lib_deps = [curl_dep, tidy_dep]
 
 ## src
 lib_sources = files(
-  'src/song.c',
-  'src/error.c',
-  'src/csn.c'
+  'src/csn.c',
+  'src/parser.c',
+  'src/util.c'
 )
 
 shlib = shared_library('csn', lib_sources,
   install : true,
   c_args : lib_args,
-  gnu_symbol_visibility : 'hidden',
   include_directories : incdir,
   dependencies: lib_deps,
 )
+## tests
 
 # Make this library usable as a Meson subproject.
 csn_dep = declare_dependency(

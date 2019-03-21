@@ -1,24 +1,15 @@
-target='libcsn.so'
 cc=gcc
 cxx=g++
 ld=gcc
-cflags=-DENABLE_DEBUG -Wall -c -fPIC -I./inc
-ldflags=-shared -lcurl -ltidy
+csn=build/libcsn.so
 
-all:
-	$(cc) $(cflags) src/csn.c -o csn.o
-	$(cc) $(cflags) src/parser.c -o parser.o
-	$(cc) $(cflags) src/util.c -o util.o
-
-	$(ld) $(ldflags) csn.o util.o parser.o -o $(target)
-
-test:all
-	$(cc) test/test.c -I./inc libcsn.so -o csn
-	$(cxx) test/test.cpp -I./inc libcsn.so -o csnpp
+test:
+	$(cxx) -DENABLE_DEBUG test/demo.cpp -I./inc $(csn) -o democpp
+	$(cc) -DENABLE_DEBUG test/queue.c -I./inc $(csn) -o queue
+	$(cc) -DENABLE_DEBUG test/buf.c -I./inc $(csn) -o buf
 
 clean:
-	rm -f csn
+	rm -f demo democpp queue buf
 	rm -f *.o
-	rm -f *.so
 
 .PHONY: all test clean

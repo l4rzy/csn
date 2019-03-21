@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <ctype.h>
 
 void *_xalloc(size_t size) {
     void *ret = malloc(size);
@@ -25,6 +26,73 @@ void *_xrealloc(void *ptr, size_t new_size) {
     return ptr;
 }
 
+/* === xpath functions === */
+csn_xpath_t *csn_xpath_parse(const char *str) {
+    if (!str) {
+        return NULL;
+    }
+    // WIP
+    return NULL;
+}
+
+/* === queue implementation === */
+
+csn_node_t *csn_node_new() {
+    csn_node_t *node = xalloc(sizeof(csn_node_t));
+    return node;
+}
+
+csn_queue_t *csn_queue_new() {
+    csn_queue_t *queue = xalloc(sizeof(csn_queue_t));
+    return queue;
+}
+
+TidyNode csn_enqueue(csn_queue_t *queue, TidyNode n) {
+    csn_node_t *new_node = csn_node_new();
+    new_node->tnode = n;
+    new_node->next = NULL;
+
+    // queue is empty
+    if (!queue->head) {
+        queue->head = new_node;
+        queue->tail = new_node;
+    }
+    // since we saved the tail node, insertion time complexity is
+    // O(1) instead of O(n)
+    else {
+        queue->tail->next = new_node;
+        queue->tail = new_node;
+    }
+    return n;
+}
+
+TidyNode csn_dequeue(csn_queue_t *q) {
+    if (!q) {
+        return NULL;
+    }
+    TidyNode save = q->head->tnode;
+    csn_node_t *new_head = q->head->next;
+    free(q->head);
+    q->head = new_head;
+    // return new head
+    return save;
+}
+
+void csn_queue_free(csn_queue_t *q) {
+    csn_node_t *ptr = q->head;
+    csn_node_t *tmp;
+    while (1) {
+        if (!ptr) {
+            free(q);
+            break;
+        }
+        tmp = ptr->next;
+        free(ptr);
+        ptr = tmp;
+    }
+}
+
+/* === buf_t implementation === */
 buf_t *csn_buf_new(size_t size) {
     buf_t *ret = xalloc(sizeof(buf_t));
 
@@ -32,6 +100,15 @@ buf_t *csn_buf_new(size_t size) {
     ret->len = 0;
 
     return ret;
+}
+
+buf_t *csn_buf_from_str(const char *str) {
+    int len = strlen(str);
+    buf_t *buf = csn_buf_new(len+1);
+
+    memcpy(buf->str, str, len);
+    buf->len = len;
+    return buf;
 }
 
 char *csn_buf_write(buf_t *buf, const char *str) {
@@ -87,4 +164,3 @@ int csn_result_free(csn_result_t *head) {
 
     return 0;
 }
-

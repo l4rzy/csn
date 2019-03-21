@@ -63,11 +63,15 @@ typedef struct _csn_song_t {
     int type; // either SONG BEAT or VIDEO
     buf_t name;
     buf_t link;
+    buf_t duration;
+    buf_t max_quality;
+    int download_count;
 } csn_song_t;
 
 typedef struct _csn_album_t {
     buf_t name;
     buf_t link;
+    buf_t max_quality;
 } csn_album_t;
 
 typedef struct _csn_song_info_t {
