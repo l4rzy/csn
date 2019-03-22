@@ -58,6 +58,7 @@
  */
 typedef struct _csn_xpath_t {
     buf_t tag;
+    bool root;
     int index;
     struct _xpath_node_t *next;
 } csn_xpath_t;
@@ -72,10 +73,12 @@ typedef struct _csn_node_t {
 typedef struct _csn_queue_t {
     csn_node_t *head;
     csn_node_t *tail;
+    int len;
 } csn_queue_t;
 
 /* xpath functions */
-csn_xpath_t *csn_xpath_parse(const char *str);
+csn_xpath_t *csn_xpath_parse(const char *);
+TidyNode csn_traverse_to_xpath(TidyNode, csn_xpath_t *);
 
 /* queue functions */
 csn_node_t *csn_node_new();
@@ -97,7 +100,9 @@ void *_xrealloc(void *, size_t);
 buf_t *csn_buf_new(size_t);
 buf_t *csn_buf_from_str(const char *);
 char *csn_buf_write(buf_t *, const char *);
+char *csn_buf_write_char(buf_t *, const char);
 char *csn_buf_append(buf_t *, const char *);
+char *csn_buf_append_char(buf_t *, const char);
 int csn_buf_free(buf_t *);
 
 /* parsing functions
