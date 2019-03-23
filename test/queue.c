@@ -1,7 +1,6 @@
 /* for testing queue
  */
 #include <csn.h>
-#include <assert.h>
 #include "../src/internal.h"
 
 int queue_count(csn_queue_t *q) {

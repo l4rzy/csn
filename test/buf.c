@@ -34,6 +34,16 @@ wants to live humbly for one.";
     print_buf(buf);
     free(temp);
 
+    csn_buf_append_char(buf, 'X');
+    ASSERT(buf->len == 1025);
+    ASSERT(buf->str[buf->len -1] = 'X');
+    print_buf(buf);
+
+    csn_buf_write_char(buf, 'Z');
+    ASSERT(buf->len == 1);
+    ASSERT(buf->str[1] == '\0');
+    print_buf(buf);
+
     csn_buf_free(buf);
 }
 

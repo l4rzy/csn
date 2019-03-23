@@ -22,13 +22,35 @@ static bool node_ok(TidyNode node) {
  * the technique here is to maintain two list, one for queued 1st gen childtren
  * and one for 2nd children
  */
-
-
 static TidyNode traverse_to_node(TidyNode root) {
-    logs("No result\n");
+    // create 2 queues
+    csn_queue_t *q1 = csn_queue_new();
+    csn_queue_t *q2 = csn_queue_new();
+
+    // add root to q1
+    csn_enqueue(q1, root);
+
+    // loop in q1 first, if !node_ok then add all its children to q2
+    TidyNode curr, child;
+    while ((curr = csn_dequeue(q1))) {
+        if (node_ok(curr)) {
+            return curr;
+        }
+        else {
+            for (child = tidyGetChild(curr); child; child = tidyGetNext(child)) {
+                csn_enqueue(q2, child);
+
+            }
+        }
+        // swap q1 and q2, then start again
+    }
+
     return NULL;
 }
 
+
+/* traverse to the xpath that's been parsed
+ */
 static TidyNode traverse_to_xpath(TidyDoc doc) {
 
 }

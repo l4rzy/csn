@@ -31,7 +31,87 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
     if (!str) {
         return NULL;
     }
-    // WIP
+
+    csn_xpath_t *root = NULL;
+    csn_xpath_t *xptr;
+    const char *ptr = str;
+    char buffer[1024]; // assume that it's no bigger than 1023
+    int buflen = 0;
+
+    while (1) {
+        if (*ptr == '\0' ) {
+            break;
+        }
+        if (*ptr == '/') {
+            // create new node, if there is no root, set it as root
+            if (!root) {
+                logs("Creating root node\n");
+                root = xalloc(sizeof(csn_xpath_t));
+                root->root = true;
+                root->next = NULL;
+
+                xptr = root;
+
+                // then continue
+                continue;
+            }
+            else {
+                ++ptr;
+                // consume until `/` or `[`
+                logf("Start consuming from %p\n", ptr);
+                while (*ptr != '/' && *ptr != '[') {
+                    buffer[buflen++] = *ptr;
+                    ++ptr;
+                }
+                // stop, then set last char to null
+                logf("End consuming at %p\n", ptr);
+                buffer[buflen] = '\0';
+
+                // create new node
+                logs("New subnode\n");
+                csn_xpath_t *xnode = xalloc(sizeof(csn_xpath_t));
+                logf("%s\n", buffer);
+                csn_buf_write(&xnode->tag, buffer);
+                xnode->root = false;
+                xnode->next = NULL;
+                xnode->index = 0;
+
+                // current node points to this node
+                // set current node pointer to this node
+                xptr->next = xnode;
+                xptr = xnode;
+
+                // reset buflen
+                buflen = 0;
+            }
+        }
+        if (*ptr == '[') {
+            logs("Indexing, consuming\n");
+            // consume until ]
+            ++ptr;
+            while (*ptr != ']') {
+                buffer[buflen++] = *ptr;
+                ++ptr;
+            }
+            // stop, then set last char to null
+            buffer[buflen] = '\0';
+
+            // convert it to int;
+            xptr->index = atoi(buffer);
+            logf("index: %d\n", xptr->index);
+            //reset buflen
+            buflen = 0;
+            ++ptr;
+        }
+        if (*ptr == ']') {
+            goto _error;
+        }
+    } // while
+
+    return root;
+
+_error:
+    logs("Parsing error\n");
     return NULL;
 }
 
@@ -63,6 +143,7 @@ TidyNode csn_enqueue(csn_queue_t *queue, TidyNode n) {
         queue->tail->next = new_node;
         queue->tail = new_node;
     }
+    ++queue->len;
     return n;
 }
 
@@ -74,6 +155,7 @@ TidyNode csn_dequeue(csn_queue_t *q) {
     csn_node_t *new_head = q->head->next;
     free(q->head);
     q->head = new_head;
+    --q->len;
     // return new head
     return save;
 }
@@ -92,11 +174,29 @@ void csn_queue_free(csn_queue_t *q) {
     }
 }
 
+#ifdef ENABLE_DEBUG
+void csn_queue_print(csn_queue_t *q) {
+    if (!q) {
+        logs("Empty queue!\n");
+    }
+
+    int count = 0;
+    csn_node_t *ptr = q->head;
+    logf("Queue at %p has %d node(s)\n", q, q->len);
+    while (ptr != q->tail) {
+        logf("node #%d at %p", count++, ptr);
+        ptr = ptr->next;
+    }
+    // print the tail
+    logf("Tail is at %p\n", q->tail);
+}
+#endif
+
 /* === buf_t implementation === */
 buf_t *csn_buf_new(size_t size) {
     buf_t *ret = xalloc(sizeof(buf_t));
 
-    ret->str = xcalloc(size+1);
+    ret->str = xcalloc(size + 1);
     ret->len = 0;
 
     return ret;
@@ -104,7 +204,7 @@ buf_t *csn_buf_new(size_t size) {
 
 buf_t *csn_buf_from_str(const char *str) {
     int len = strlen(str);
-    buf_t *buf = csn_buf_new(len+1);
+    buf_t *buf = csn_buf_new(len + 1);
 
     memcpy(buf->str, str, len);
     buf->len = len;
@@ -115,12 +215,12 @@ char *csn_buf_write(buf_t *buf, const char *str) {
     int new_len = strlen(str);
     if (!buf) {
         logs("write to unallocated buf\n");
-        buf = csn_buf_new(new_len +1);
+        buf = csn_buf_new(new_len + 1);
     }
 
     // realloc if new str differs
     if (new_len != buf->len) {
-        buf->str = xrealloc(buf->str, new_len+1);
+        buf->str = xrealloc(buf->str, new_len + 1);
     }
     buf->len = new_len;
     memcpy(buf->str, str, buf->len);
@@ -128,14 +228,31 @@ char *csn_buf_write(buf_t *buf, const char *str) {
     return buf->str;
 }
 
+char *csn_buf_write_char(buf_t *buf, const char c) {
+    // write a char at 0 position without realloc
+    buf->str[0] = c;
+    buf->len = 1;
+    buf->str[1] = '\0';
+
+    return buf->str;
+}
+
 char *csn_buf_append(buf_t *buf, const char *str) {
     int old = buf->len;
     int new_len = strlen(str);
     buf->len += new_len; // new len
-    buf->str = xrealloc(buf->str, buf->len+1);
+    buf->str = xrealloc(buf->str, buf->len + 1);
 
-    memcpy(buf->str+old, str, new_len);
+    memcpy(buf->str + old, str, new_len);
     buf->str[buf->len] = '\0';
+
+    return buf->str;
+}
+
+char *csn_buf_append_char(buf_t *buf, const char c) {
+    buf->str = xrealloc(buf->str, buf->len + 2);
+    buf->str[buf->len] = c;
+    buf->str[++(buf->len)] = '\0';
 
     return buf->str;
 }

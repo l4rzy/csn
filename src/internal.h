@@ -60,7 +60,7 @@ typedef struct _csn_xpath_t {
     buf_t tag;
     bool root;
     int index;
-    struct _xpath_node_t *next;
+    struct _csn_xpath_t *next;
 } csn_xpath_t;
 
 /* a queue of tidynodes
