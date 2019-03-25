@@ -7,6 +7,11 @@
 #define CSN_SEARCH_URL "http://search.chiasenhac.vn/search.php"
 #define CSN_HOME_URL "http://old.chiasenhac.vn"
 
+#define CSN_HOT_VIDEOS_XPATH    "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[1]/div[2]"
+#define CSN_HOT_VN_XPATH        "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[2]/div[2]"
+#define CSN_HOT_USUK_XPATH      "/html/body/div[1]/div/div[3]/div/div[4]/div/div[5]/div/div[2]/div[2]"
+#define CSN_SEARCH_XPATH        "/html/body/div[1]/div/div[3]/div/div/div[5]/div[1]/div[3]/div[2]/table"
+
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \
     do { \
@@ -78,6 +83,7 @@ typedef struct _csn_queue_t {
 
 /* xpath functions */
 csn_xpath_t *csn_xpath_parse(const char *);
+void csn_xpath_free(csn_xpath_t *);
 TidyNode csn_traverse_to_xpath(TidyNode, csn_xpath_t *);
 
 /* queue functions */

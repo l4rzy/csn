@@ -59,18 +59,20 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
                 ++ptr;
                 // consume until `/` or `[`
                 logf("Start consuming from %p\n", ptr);
-                while (*ptr != '/' && *ptr != '[') {
+                while (*ptr != '/' &&
+                       *ptr != '[' &&
+                       *ptr != ']' &&
+                       *ptr != '\0') {
                     buffer[buflen++] = *ptr;
                     ++ptr;
                 }
                 // stop, then set last char to null
-                logf("End consuming at %p\n", ptr);
+                logf("End consuming at %p, *ptr = %c\n", ptr, *ptr);
                 buffer[buflen] = '\0';
 
                 // create new node
-                logs("New subnode\n");
+                logf("New subnode %s\n", buffer);
                 csn_xpath_t *xnode = xalloc(sizeof(csn_xpath_t));
-                logf("%s\n", buffer);
                 csn_buf_write(&xnode->tag, buffer);
                 xnode->root = false;
                 xnode->next = NULL;
@@ -89,15 +91,21 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             logs("Indexing, consuming\n");
             // consume until ]
             ++ptr;
-            while (*ptr != ']') {
+            while (*ptr != ']' &&
+                   *ptr != '\0') {
+                if (!isdigit(*ptr)) {
+                    goto _error;
+                }
                 buffer[buflen++] = *ptr;
                 ++ptr;
             }
+
+            logf("End consuming at %p, *ptr = %c\n", ptr, *ptr);
             // stop, then set last char to null
             buffer[buflen] = '\0';
 
             // convert it to int;
-            xptr->index = atoi(buffer);
+            xptr->index = strtol(buffer, NULL, 10);
             logf("index: %d\n", xptr->index);
             //reset buflen
             buflen = 0;
@@ -111,8 +119,22 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
     return root;
 
 _error:
+    // free all allocated chunks
+
+
     logs("Parsing error\n");
     return NULL;
+}
+
+void csn_xpath_free(csn_xpath_t *xp) {
+    csn_xpath_t *xptr = xp;
+    csn_xpath_t *tmp = xp;
+
+    while (tmp) {
+        free(tmp);
+        xptr = xptr->next;
+        tmp = xptr;
+    }
 }
 
 /* === queue implementation === */
