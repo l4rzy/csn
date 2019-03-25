@@ -120,7 +120,7 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
 
 _error:
     // free all allocated chunks
-
+    csn_xpath_free(root);
 
     logs("Parsing error\n");
     return NULL;

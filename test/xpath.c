@@ -20,6 +20,7 @@ void xpath_print(csn_xpath_t *xp) {
         ASSERT(r); \
         puts(p); \
         xpath_print(r); \
+        free(r); \
     } while (0)
 
 int main() {
