@@ -62,8 +62,8 @@
 /* for xpath navigation in DOM
  */
 typedef struct _csn_xpath_t {
-    buf_t tag;
-    bool root;
+    buf_t *tag;
+    bool is_root;
     int index;
     struct _csn_xpath_t *next;
 } csn_xpath_t;
@@ -83,6 +83,7 @@ typedef struct _csn_queue_t {
 
 /* xpath functions */
 csn_xpath_t *csn_xpath_parse(const char *);
+csn_xpath_t *csn_xpath_new();
 void csn_xpath_free(csn_xpath_t *);
 TidyNode csn_traverse_to_xpath(TidyNode, csn_xpath_t *);
 
@@ -113,6 +114,6 @@ int csn_buf_free(buf_t *);
 
 /* parsing functions
  */
-csn_result_t *parse_search_result(TidyDoc, TidyNode, int);
+csn_result_t *parse_search_result(TidyDoc);
 
 #endif

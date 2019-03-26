@@ -46,8 +46,8 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             // create new node, if there is no root, set it as root
             if (!root) {
                 logs("Creating root node\n");
-                root = xalloc(sizeof(csn_xpath_t));
-                root->root = true;
+                root = csn_xpath_new();
+                root->is_root = true;
                 root->next = NULL;
 
                 xptr = root;
@@ -72,9 +72,9 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
 
                 // create new node
                 logf("New subnode %s\n", buffer);
-                csn_xpath_t *xnode = xalloc(sizeof(csn_xpath_t));
-                csn_buf_write(&xnode->tag, buffer);
-                xnode->root = false;
+                csn_xpath_t *xnode = csn_xpath_new();
+                csn_buf_write(xnode->tag, buffer);
+                xnode->is_root = false;
                 xnode->next = NULL;
                 xnode->index = 0;
 
@@ -94,7 +94,7 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             while (*ptr != ']' &&
                    *ptr != '\0') {
                 if (!isdigit(*ptr)) {
-                    goto _error;
+                    goto _parse_error;
                 }
                 buffer[buflen++] = *ptr;
                 ++ptr;
@@ -112,13 +112,13 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             ++ptr;
         }
         if (*ptr == ']') {
-            goto _error;
+            goto _parse_error;
         }
     } // while
 
     return root;
 
-_error:
+_parse_error:
     // free all allocated chunks
     csn_xpath_free(root);
 
@@ -126,11 +126,20 @@ _error:
     return NULL;
 }
 
+csn_xpath_t *csn_xpath_new() {
+    csn_xpath_t *ret = xalloc(sizeof(csn_xpath_t));
+    ret->tag = csn_buf_new(1);
+
+    return ret;
+}
+
 void csn_xpath_free(csn_xpath_t *xp) {
-    csn_xpath_t *xptr = xp;
-    csn_xpath_t *tmp = xp;
+    csn_xpath_t *tmp, *xptr;
+    xptr = xp;
+    tmp = xptr;
 
     while (tmp) {
+        csn_buf_free(tmp->tag);
         free(tmp);
         xptr = xptr->next;
         tmp = xptr;

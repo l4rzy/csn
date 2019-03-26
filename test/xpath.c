@@ -2,14 +2,14 @@
 #include "../src/internal.h"
 
 void xpath_print(csn_xpath_t *xp) {
-    csn_xpath_t *ptr = xp;
-    while (ptr) {
-        if (ptr->root) {
+    csn_xpath_t *xptr = xp;
+    while (xptr) {
+        if (xptr->is_root) {
             printf("root ");
         } else {
-            printf("-> %s[%d] ", ptr->tag.str, ptr->index);
+            printf("-> %s[%d] ", xptr->tag->str, xptr->index);
         }
-        ptr = ptr->next;
+        xptr = xptr->next;
     }
     printf("\n");
 }
@@ -20,7 +20,7 @@ void xpath_print(csn_xpath_t *xp) {
         ASSERT(r); \
         puts(p); \
         xpath_print(r); \
-        free(r); \
+        csn_xpath_free(r); \
     } while (0)
 
 int main() {
