@@ -27,6 +27,10 @@ void *_xrealloc(void *ptr, size_t new_size) {
 }
 
 /* === xpath functions === */
+
+/* parse xpath into linked list, this support a subset of xpath
+ * and for use locally, so I guess this implementation is ok :)
+ */
 csn_xpath_t *csn_xpath_parse(const char *str) {
     if (!str) {
         return NULL;

@@ -15,7 +15,7 @@
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \
     do { \
-        fprintf(stderr, "[%s:%d:%s()] "fmt, __FILE__, __LINE__, __func__, \
+        fprintf(stderr, "[\033[0;32m%s\033[0m:%d:\033[0;34m%s()\033[0m] "fmt, __FILE__, __LINE__, __func__, \
             __VA_ARGS__); \
     } while (0)
 

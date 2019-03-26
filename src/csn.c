@@ -21,6 +21,8 @@ static char *build_search_url(const char *str, int options, int limit) {
 
 /* === API PUBLIC FUNCTIONS === */
 csn_ctx_t *csn_init() {
+    logs("\033[0;33mDEBUG MODE IS ENABLED\n\033[0m");
+    logs("\033[0;33mIF YOU DON'T WANT DEBUG INFO, RECOMPILE WITHOUT ENABLE_DEBUG\n\033[0m");
     csn_ctx_t *ctx = xalloc(sizeof(csn_ctx_t));
     bzero(&ctx->docbuf, sizeof(ctx->docbuf));
     bzero(&ctx->tidy_errbuf, sizeof(ctx->tidy_errbuf));
@@ -29,7 +31,12 @@ csn_ctx_t *csn_init() {
     // set some curl options
     curl_easy_setopt(ctx->curl, CURLOPT_ERRORBUFFER, ctx->curl_errbuf);
     curl_easy_setopt(ctx->curl, CURLOPT_NOPROGRESS, 1L);
+#ifdef ENABLE_DEBUG
+    curl_easy_setopt(ctx->curl, CURLOPT_VERBOSE, 1L);
+#else
     curl_easy_setopt(ctx->curl, CURLOPT_VERBOSE, 0L);
+#endif
+
     curl_easy_setopt(ctx->curl, CURLOPT_WRITEFUNCTION, write_cb);
 
     ctx->tdoc = tidyCreate();
@@ -65,6 +72,7 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
     curl_free(search_string);
     free(surl);
     // perform the curl
+    logs("Getting data from chiasenhac\n");
     ctx->err = curl_easy_perform(ctx->curl);
     if (!ctx->err) {
         ctx->err = tidyParseBuffer(ctx->tdoc, &ctx->docbuf); /* parse the input */
@@ -73,7 +81,7 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
             if (ctx->err >= 0) {
                 ctx->err = tidyRunDiagnostics(ctx->tdoc); /* load tidy error buffer */
                 if (ctx->err >= 0) {
-                    return parse_search_result(ctx->tdoc, tidyGetRoot(ctx->tdoc), 0); /* walk the tree */
+                    return parse_search_result(ctx->tdoc); /* walk the tree */
                 }
             }
         }
