@@ -36,7 +36,7 @@ wants to live humbly for one.";
 
     csn_buf_append_char(buf, 'X');
     ASSERT(buf->len == 1025);
-    ASSERT(buf->str[buf->len -1] = 'X');
+    ASSERT(buf->str[buf->len -1] == 'X');
     print_buf(buf);
 
     csn_buf_write_char(buf, 'Z');
