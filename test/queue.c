@@ -20,7 +20,7 @@ int queue_count(csn_queue_t *q) {
 
 
 int main() {
-    TidyNode n;
+    TidyNode n = NULL;
     csn_queue_t *queue = csn_queue_new();
 
     logs("Inserting 100 nodes to queue\n");

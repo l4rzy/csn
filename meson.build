@@ -30,11 +30,27 @@ shlib = shared_library('csn', lib_sources,
   dependencies: lib_deps,
 )
 ## tests
+test_buf = executable('test_buf',
+  files('test/buf.c'),
+  link_with: shlib,
+  include_directories: incdir,
+)
 
-# Make this library usable as a Meson subproject.
-csn_dep = declare_dependency(
-  include_directories: include_directories('inc'),
-  link_with : shlib)
+test_queue = executable('test_queue',
+  files('test/queue.c'),
+  link_with: shlib,
+  include_directories: incdir,
+)
+
+test_xpath = executable('test_xpath',
+  files('test/xpath.c'),
+  link_with: shlib,
+  include_directories: incdir,
+)
+
+test('buf_t functions', test_buf)
+test('queue functions', test_queue)
+test('xpath functions', test_xpath)
 
 # Make this library usable from the system's
 # package manager.
