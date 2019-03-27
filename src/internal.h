@@ -4,13 +4,13 @@
 #include "csn.h"
 
 /* chiasenhac.com */
-#define CSN_SEARCH_URL "http://search.chiasenhac.vn/search.php"
-#define CSN_HOME_URL "http://old.chiasenhac.vn"
+#define CSN_SEARCH_URL          "http://search.chiasenhac.vn/search.php"
+#define CSN_HOME_URL            "http://old.chiasenhac.vn"
 
 #define CSN_HOT_VIDEOS_XPATH    "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[1]/div[2]"
 #define CSN_HOT_VN_XPATH        "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[2]/div[2]"
 #define CSN_HOT_USUK_XPATH      "/html/body/div[1]/div/div[3]/div/div[4]/div/div[5]/div/div[2]/div[2]"
-#define CSN_SEARCH_XPATH        "/html/body/div[1]/div/div[3]/div/div/div[5]/div[1]/div[3]/div[2]/table"
+#define CSN_SEARCH_XPATH        "/html/body/div/div/div[2]/div/div/div[4]/div/div[2]/div[1]/table/end"
 
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \

@@ -3,44 +3,48 @@
 #ifdef ENABLE_DEBUG
 static void print_node(TidyNode n) {
     const char *name = tidyNodeGetName(n);
-    logf("node name: %s at line %d\n", name, tidyNodeLine(n));
+    printf("line: %d <%s ", tidyNodeLine(n), name);
     TidyAttr attr;
     for (attr = tidyAttrFirst(n); attr; attr = tidyAttrNext(attr)) {
-        printf("%s: %s\n", tidyAttrName(attr), tidyAttrValue(attr));
+        printf("%s=\"%s\" ", tidyAttrName(attr), tidyAttrValue(attr));
     }
+    printf(">\n");
 }
+
+void trace_parent(TidyNode tnod) {
+    TidyNode parent = tidyGetParent(tnod);
+
+    if (!parent) {
+        return;
+    }
+
+    print_node(parent);
+    // recursive
+    trace_parent(parent);
+}
+
 
 /* find the xpath of a node by tracing it
  */
-void trace_xpath(TidyDoc doc, TidyNode tnod, int indent)
-{
+void find_node(TidyNode tnod) {
     TidyNode child;
+    TidyAttr attr;
     for (child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
         ctmbstr name = tidyNodeGetName(child);
-        if (name) {
-            /* if it has a name, then it's an HTML tag ... */
-            TidyAttr attr;
-            printf("%*.*s%s ", indent, indent, "<", name);
-            /* walk the attribute list */
-            for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr) ) {
-                printf(tidyAttrName(attr));
-                tidyAttrValue(attr) ? printf("=\"%s\" ",
-                                             tidyAttrValue(attr)) : printf(" ");
+        if (name && !strcmp(name, "table")) {
+            // get all its attributes
+            for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr)) {
+                if (!strcmp(tidyAttrName(attr), "class") &&
+                    !strcmp(tidyAttrValue(attr), "tbtable")) {
+                    logs("Found it!\n");
+                    print_node(child);
+                    trace_parent(child);
+                }
             }
-            printf(">\n");
         }
-        else {
-            /* if it doesn't have a name, then it's probably text, cdata, etc... */
-            TidyBuffer buf;
-            tidyBufInit(&buf);
-            tidyNodeGetText(doc, child, &buf);
-            printf("%*.*s\n", indent, indent, buf.bp ? (char *)buf.bp : "");
-            tidyBufFree(&buf);
-        }
-        trace_xpath(doc, child, indent + 4); /* recursive */
+        find_node(child); /* recursive */
     }
 }
-
 #endif
 
 TidyNode traverse_to_xpath(TidyNode root, csn_xpath_t *xp) {
@@ -94,6 +98,7 @@ _traverse_loop:
     goto _traverse_error;
 
 _traverse_exit:
+    logs("Traversed successfully!\n");
     return node;
 
 _traverse_error:
@@ -108,7 +113,7 @@ csn_result_t *parse_search_result(TidyDoc doc) {
     TidyNode root = tidyGetRoot(doc);
 
     puts("===========================================");
-    trace_xpath(doc, root, 0);
+    find_node(root);
     puts("===========================================");
 
     logs("Parsing xpath\n");
@@ -116,9 +121,9 @@ csn_result_t *parse_search_result(TidyDoc doc) {
     logs("Traversing to xpath\n");
     TidyNode result = traverse_to_xpath(root, search_xpath);
 
-#ifdef ENABLE_DEBUG
-    print_node(result);
-#endif
+    if (result) {
+
+    }
 
     csn_xpath_free(search_xpath);
 
