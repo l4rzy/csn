@@ -24,8 +24,7 @@ $ cd build && ninja
 
 ## Run tests
 ```sh
-$ make
-$ sh ./run_test.sh
+$ ninja test
 ```
 
 ## Author(s)
