@@ -103,3 +103,77 @@ csn_song_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_song_t *s) {
 csn_album_info_t *csn_fetch_album_info(csn_ctx_t *ctx, csn_album_t *a) {
     return NULL;
 }
+
+/* functions to free memory
+ */
+void csn_result_free(csn_result_t *r) {
+    csn_result_t *temp, *rptr;
+
+    rptr = r;
+    temp = r;
+
+    // free a linked list
+    while (rptr) {
+        if (rptr->is_song) {
+            csn_song_free(r->song);
+        } else {
+            csn_album_free(r->album);
+        }
+        rptr = rptr->next;
+        temp = rptr;
+    }
+}
+
+void csn_album_info_free(csn_album_info_t *ai) {
+    if (ai) {
+        csn_buf_free(ai->title);
+        csn_buf_free(ai->artist);
+        csn_buf_free(ai->year);
+
+        for (int i = 0; i < ai->num_song; ++i) {
+            csn_song_free(ai->song[i]);
+        }
+    }
+}
+
+static void csn_download_free(csn_download_t *d) {
+    if (d) {
+        csn_buf_free(d->quality);
+        csn_buf_free(d->url);
+        csn_buf_free(d->size);
+    }
+}
+
+void csn_song_info_free(csn_song_info_t *si) {
+    if (si) {
+        csn_buf_free(si->title);
+        csn_buf_free(si->artist);
+        csn_buf_free(si->composer);
+        csn_buf_free(si->year);
+
+        csn_album_free(si->album);
+
+        csn_buf_free(si->lyrics);
+
+        for (int i = 0; i < si->num_download; ++i) {
+            csn_download_free(si->download[i]);
+        }
+    }
+}
+
+void csn_song_free(csn_song_t *s) {
+    if (s) {
+        csn_buf_free(s->name);
+        csn_buf_free(s->link);
+        csn_buf_free(s->duration);
+        csn_buf_free(s->max_quality);
+    }
+}
+
+void csn_album_free(csn_album_t *a) {
+    if (a) {
+        csn_buf_free(a->name);
+        csn_buf_free(a->link);
+        csn_buf_free(a->max_quality);
+    }
+}
