@@ -137,6 +137,8 @@ csn_xpath_t *csn_xpath_new() {
     return ret;
 }
 
+/* recursive structure, free the head itself
+ */
 void csn_xpath_free(csn_xpath_t *xp) {
     csn_xpath_t *tmp, *xptr;
     xptr = xp;
@@ -295,24 +297,5 @@ char *csn_buf_append_char(buf_t *buf, const char c) {
 int csn_buf_free(buf_t *buf) {
     free(buf->str);
     free(buf);
-    return 0;
-}
-
-/* ================= */
-csn_result_t *csn_result_new(bool is_song) {
-    csn_result_t *ret = xalloc(sizeof(csn_result_t));
-
-    ret->next = NULL;
-    ret->is_song = is_song;
-    return ret;
-}
-
-int csn_result_free(csn_result_t *head) {
-    csn_result_t *r = head;
-    while (r) {
-        free(r);
-        r = r->next;
-    }
-
     return 0;
 }
