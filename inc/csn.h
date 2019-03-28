@@ -54,43 +54,43 @@ typedef struct _csn_ctx_t {
 } csn_ctx_t;
 
 typedef struct _csn_download_t {
-    buf_t quality;
-    buf_t url;
-    buf_t size;
+    buf_t *quality;
+    buf_t *url;
+    buf_t *size;
 } csn_download_t;
 
 typedef struct _csn_song_t {
     int type; // either SONG BEAT or VIDEO
-    buf_t name;
-    buf_t link;
-    buf_t duration;
-    buf_t max_quality;
+    buf_t *name;
+    buf_t *link;
+    buf_t *duration;
+    buf_t *max_quality;
     int download_count;
 } csn_song_t;
 
 typedef struct _csn_album_t {
-    buf_t name;
-    buf_t link;
-    buf_t max_quality;
+    buf_t *name;
+    buf_t *link;
+    buf_t *max_quality;
 } csn_album_t;
 
 typedef struct _csn_song_info_t {
     int type; // either SONG BEAT or VIDEO
-    buf_t title;
-    buf_t artist;
-    buf_t composer;
-    buf_t year;
-    csn_album_t album;
-    buf_t lyrics;
-    csn_download_t *download;
+    buf_t *title;
+    buf_t *artist;
+    buf_t *composer;
+    buf_t *year;
+    csn_album_t *album;
+    buf_t *lyrics;
+    csn_download_t **download;
     int num_download;
 } csn_song_info_t;
 
 typedef struct _csn_album_info_t {
-    buf_t title;
-    buf_t artist;
-    buf_t year;
-    csn_song_t *song;
+    buf_t *title;
+    buf_t *artist;
+    buf_t *year;
+    csn_song_t **song; // an array of pointers to csn_song_t
     int num_song;
 } csn_album_info_t;
 
@@ -98,8 +98,8 @@ typedef struct _csn_album_info_t {
  */
 typedef struct _csn_result_t {
     union {
-        csn_song_t song; // both song and beat and video
-        csn_album_t album;
+        csn_song_t *song; // both song and beat and video
+        csn_album_t *album;
     };
     bool is_song; // true for song, false for album
     struct _csn_result_t *next; // this is a recursive structure
@@ -119,6 +119,14 @@ csn_result_t *csn_search(csn_ctx_t *, const char *, int, int);
 // csn_song_info_t *csn_fetch_song_info(csn_ctx_t *, csn_song_t *);
 // csn_album_info_t *csn_fetch_album_info(csn_ctx_t *, csn_album_t *);
 // csn_song_info_t **csn_batch_fetch_song_info(csn_ctx_t *, csn_album_info_t *);
+
+/* functions for free memory
+ */
+void csn_result_free(csn_result_t *);
+void csn_album_info_free(csn_album_info_t *);
+void csn_song_info_free(csn_song_info_t *);
+void csn_song_free(csn_song_t *);
+void csn_album_free(csn_album_t *);
 
 #ifdef __cplusplus
 }
