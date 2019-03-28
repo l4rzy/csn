@@ -45,5 +45,6 @@ wants to live humbly for one.";
     print_buf(buf);
 
     csn_buf_free(buf);
+    free(buf);
 }
 
