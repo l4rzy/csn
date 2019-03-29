@@ -63,7 +63,6 @@ int csn_free(csn_ctx_t *ctx) {
 }
 
 csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit) {
-    csn_result_t *ret = xalloc(sizeof(csn_result_t));
     // build search url
     char *search_string = curl_easy_escape(ctx->curl, str, strlen(str));
     char *surl = build_search_url(search_string, options, limit);
@@ -89,7 +88,7 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
     else {
         fatalf("Could not get data from `%s`\n", surl);
     }
-    return ret;
+    return NULL;
 }
 
 csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type, int limit) {
@@ -100,24 +99,34 @@ csn_song_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_song_t *s) {
     return NULL;
 }
 
+csn_song_info_t *csn_fetch_song_info_url(csn_ctx_t *ctx, const char *url) {
+    return NULL;
+}
+
 csn_album_info_t *csn_fetch_album_info(csn_ctx_t *ctx, csn_album_t *a) {
+    return NULL;
+}
+
+csn_album_info_t *csn_fetch_album_info_url(csn_ctx_t *ctx, const char *url) {
     return NULL;
 }
 
 /* functions to free memory
  */
 void csn_result_free(csn_result_t *r) {
-    csn_result_t *temp, *rptr;
+    csn_result_t *rptr;
+    csn_result_t *temp;
 
     rptr = r;
     temp = r;
 
     // free a linked list
-    while (rptr) {
-        if (rptr->is_song) {
-            csn_song_free(r->song);
+    while (temp) {
+        logf("Freeing result at %p\n", temp);
+        if (temp->is_song) {
+            csn_song_free(temp->song);
         } else {
-            csn_album_free(r->album);
+            csn_album_free(temp->album);
         }
         rptr = rptr->next;
         temp = rptr;
@@ -174,6 +183,7 @@ void csn_album_free(csn_album_t *a) {
     if (a) {
         csn_buf_free(a->name);
         csn_buf_free(a->link);
+        csn_buf_free(a->cover);
         csn_buf_free(a->max_quality);
     }
 }
