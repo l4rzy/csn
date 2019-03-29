@@ -1,10 +1,12 @@
 ## common
 project('csn', 'c',
-  version : '0.0.1',
+  version : '0.1.0',
   default_options : ['warning_level=1'])
 
+csn_version = meson.project_version()
+
 ## compiler flags
-lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0']
+lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0', '-fuse-ld=gold']
 
 ## dirs
 incdir = include_directories('inc')
@@ -12,7 +14,7 @@ srcdir = include_directories('src')
 
 ## dependencies
 curl_dep = dependency('libcurl')
-tidy_dep = dependency('tidy')
+tidy_dep = dependency('tidy', version: '>=5.7')
 
 lib_deps = [curl_dep, tidy_dep]
 
@@ -28,6 +30,7 @@ shlib = shared_library('csn', lib_sources,
   c_args : lib_args,
   include_directories : incdir,
   dependencies: lib_deps,
+  version: csn_version.split('.')[0],
 )
 ## tests
 test_buf = executable('test_buf',
@@ -63,5 +66,5 @@ pkg_mod.generate(
   description : 'C library for chiasenhac.com',
   subdirs : 'csn',
   libraries : shlib,
-  version : '0.0.1',
+  version : csn_version,
 )
