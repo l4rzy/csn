@@ -116,4 +116,13 @@ int csn_buf_free(buf_t *);
  */
 csn_result_t *parse_search_result(TidyDoc);
 
+/* function to create result
+ */
+csn_download_t *csn_download_new();
+csn_song_t *csn_song_new(int type);
+csn_album_t *csn_album_new();
+csn_song_info_t *csn_song_info_new();
+csn_album_info_t *csn_album_info_new();
+csn_result_t *csn_result_new(bool is_song);
+
 #endif
