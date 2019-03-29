@@ -23,7 +23,6 @@ void trace_parent(TidyNode tnod) {
     trace_parent(parent);
 }
 
-
 /* find the xpath of a node by tracing it
  */
 void find_node(TidyNode tnod) {
@@ -35,7 +34,7 @@ void find_node(TidyNode tnod) {
             // get all its attributes
             for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr)) {
                 if (!strcmp(tidyAttrName(attr), "class") &&
-                    !strcmp(tidyAttrValue(attr), "tbtable")) {
+                        !strcmp(tidyAttrValue(attr), "tbtable")) {
                     logs("Found it!\n");
                     print_node(child);
                     trace_parent(child);
@@ -43,6 +42,37 @@ void find_node(TidyNode tnod) {
             }
         }
         find_node(child); /* recursive */
+    }
+}
+
+void dump_node(TidyDoc doc, TidyNode tnod, int indent) {
+    TidyNode child;
+    TidyAttr attr;
+    for (child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
+        switch (tidyNodeGetType(child)) {
+        case TidyNode_Start:
+            printf("<%s ", tidyNodeGetName(child));
+            for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr)) {
+                printf("%s=\"%s\" ", tidyAttrName(attr), tidyAttrValue(attr));
+            }
+            printf(">\n");
+            break;
+        case TidyNode_End:
+            printf("</%s>\n", tidyNodeGetName(child));
+            break;
+        case TidyNode_Text:
+            do {
+                TidyBuffer buf;
+                tidyBufInit(&buf);
+                tidyNodeGetText(doc, child, &buf);
+                printf("%s", buf.bp);
+            } while (0);
+            break;
+        default:
+            break;
+
+        }
+        dump_node(doc, child, indent + 4); /* recursive */
     }
 }
 #endif
@@ -93,8 +123,8 @@ _traverse_loop:
             goto _traverse_loop;
         }
     }
-    // there's no child that's sufficicent
-    logs("Found no sufficicent child\n");
+    // there's no child that's satisfied
+    logs("Found no satisfied child\n");
     goto _traverse_error;
 
 _traverse_exit:
@@ -106,26 +136,86 @@ _traverse_error:
     return NULL;
 }
 
+/* parse in each entry
+ * scheme:
+ *   1st child node: # of result
+ *   2nd child node: song name and artist
+ *   3rd: duration and max quality
+ *   6th: download count
+ * let's dig it
+ */
+csn_result_t *parse_entry(TidyDoc doc, TidyNode tnod) {
+    TidyNode child;
+    int i;
+
+    TidyAttr attr = tidyAttrFirst(tnod);
+    if (!attr) {
+        logs("This is the column header\n");
+        return NULL;
+    }
+
+    for (child = tidyGetChild(tnod), i = 0;
+         child;
+         child = tidyGetNext(child), ++i) {
+
+        switch (i) {
+            case 1: // song name & artist
+                dump_node(doc, child, 0);
+            break;
+
+            case 2: // duration and max quality
+                dump_node(doc, child, 0);
+            break;
+
+            case 5: // download count
+                dump_node(doc, child, 0);
+            break;
+            default:
+            break;
+        }
+    }
+    return NULL;
+}
 
 csn_result_t *parse_search_result(TidyDoc doc) {
     // get root node from document, and pass it to the traversing function
     // we'll get
     TidyNode root = tidyGetRoot(doc);
-
-    puts("===========================================");
-    find_node(root);
-    puts("===========================================");
+    csn_result_t *rhead = NULL;
+    csn_result_t *rptr = NULL;
 
     logs("Parsing xpath\n");
     csn_xpath_t *search_xpath = csn_xpath_parse(CSN_SEARCH_XPATH);
     logs("Traversing to xpath\n");
-    TidyNode result = traverse_to_xpath(root, search_xpath);
 
-    if (result) {
-
+    // the target node we wanted to traverse to
+    TidyNode target = traverse_to_xpath(root, search_xpath);
+    if (!target) {
+        logs("Could not traverse to xpath\n");
+        goto _parse_error;
     }
 
+    // loop in all subnode, and call parse_entry() to generate a result node
+    TidyNode child;
+    for (child = tidyGetChild(target); child; child = tidyGetNext(child)) {
+        csn_result_t *rslt = parse_entry(doc, child);
+        if (rslt) {
+            if (!rhead) {
+                // set that result as head
+                rhead = rslt;
+                rptr = rhead;
+            }
+            else {
+                // link to rptr
+                rptr->next = rslt;
+                rptr = rslt;
+            }
+        }
+        logs("This child doesn't return any results\n");
+    }
     csn_xpath_free(search_xpath);
 
+    return rhead;
+_parse_error:
     return NULL;
 }
