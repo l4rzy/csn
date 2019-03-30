@@ -10,12 +10,64 @@ static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
     return r;
 }
 
+/* builds search url from options, currently lthe limit options is disable
+ * but in the future, maybe we'll make more than one request to get some
+ * further pages in order to get the number of results as user wanted
+ */
 static char *build_search_url(const char *str, int options, int limit) {
+    buf_t *search_type = csn_buf_new(0);
+    buf_t *search_sort = csn_buf_new(0);
+    buf_t *search_cat  = csn_buf_new(0);
+
+    /* failed to do it the more rational way due to the limitation of
+     * C macro system
+     */
+#define TYPE_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_type, s); \
+    }
+
+#define SORT_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_sort, s); \
+    }
+
+#define CAT_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_cat, s); \
+    }
+
+    TYPE_CASE(SEARCH_ARTIST, CSN_S_SEARCH_ARTIST);
+    TYPE_CASE(SEARCH_SONG, CSN_S_SEARCH_SONG);
+    TYPE_CASE(SEARCH_COMPOSER, CSN_S_SEARCH_COMPOSER);
+    TYPE_CASE(SEARCH_ALBUM, CSN_S_SEARCH_ALBUM);
+    TYPE_CASE(SEARCH_LYRICS, CSN_S_SEARCH_LYRICS);
+
+    SORT_CASE(SEARCH_SORT_MOST_LOVED, CSN_S_SEARCH_SORT_MOST_LOVED);
+    SORT_CASE(SEARCH_SORT_BEST_QUALITY, CSN_S_SEARCH_SORT_BEST_QUALITY);
+    SORT_CASE(SEARCH_SORT_LATEST, CSN_S_SEARCH_SORT_LATEST);
+
+    CAT_CASE(SEARCH_CATEGORY_MUSIC, CSN_S_SEARCH_CATEGORY_MUSIC);
+    CAT_CASE(SEARCH_CATEGORY_BEAT, CSN_S_SEARCH_CATEGORY_BEAT);
+    CAT_CASE(SEARCH_CATEGORY_VIDEO, CSN_S_SEARCH_CATEGORY_VIDEO);
+
+#undef TYPE_CASE
+#undef SORT_CASE
+#undef CAT_CASE
+
+    logf("search options:\ntype: %s\nsort: %s\ncat: %s\n", search_type->str, search_sort->str, search_cat->str);
+
     char temp[1024]; //TODO: fix this
     const char *search_fmt = CSN_SEARCH_URL"?s=%s&mode=%s&order=%s&cat=%s";
 
-    sprintf(temp, search_fmt, str, "", "", "music");
+    sprintf(temp, search_fmt, str, search_type->str, search_sort->str, search_cat->str);
     logf("%s\n", temp);
+
+/* free stuff
+ */
+    csn_buf_free(search_type);
+    csn_buf_free(search_sort);
+    csn_buf_free(search_cat);
     return strdup(temp);
 }
 
@@ -142,6 +194,8 @@ void csn_album_info_free(csn_album_info_t *ai) {
         for (int i = 0; i < ai->num_song; ++i) {
             csn_song_free(ai->song[i]);
         }
+
+        free(ai);
     }
 }
 
@@ -150,6 +204,8 @@ static void csn_download_free(csn_download_t *d) {
         csn_buf_free(d->quality);
         csn_buf_free(d->url);
         csn_buf_free(d->size);
+
+        free(d);
     }
 }
 
@@ -167,6 +223,8 @@ void csn_song_info_free(csn_song_info_t *si) {
         for (int i = 0; i < si->num_download; ++i) {
             csn_download_free(si->download[i]);
         }
+
+        free(si);
     }
 }
 
@@ -176,6 +234,8 @@ void csn_song_free(csn_song_t *s) {
         csn_buf_free(s->link);
         csn_buf_free(s->duration);
         csn_buf_free(s->max_quality);
+
+        free(s);
     }
 }
 
@@ -185,5 +245,7 @@ void csn_album_free(csn_album_t *a) {
         csn_buf_free(a->link);
         csn_buf_free(a->cover);
         csn_buf_free(a->max_quality);
+
+        free(a);
     }
 }
