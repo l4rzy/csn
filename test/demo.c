@@ -2,9 +2,9 @@
 
 int print_entry(csn_result_t *r) {
     if (r->is_song)
-        printf("name: %s\nlink: %s\n", r->song.name.str, r->song.link.str);
+        printf("name: %s\nlink: %s\n", r->song->name->str, r->song->link->str);
     else
-        printf("name: %s\nlink: %s\n", r->album.name.str, r->album.link.str);
+        printf("name: %s\nlink: %s\n", r->album->name->str, r->album->link->str);
     return 0;
 }
 
@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     csn_ctx_t *ctx = csn_init();
-    csn_result_t *result = csn_search(ctx, argv[1], 1, 1);
+    csn_result_t *result = csn_search(ctx, argv[1], SEARCH_ARTIST | SEARCH_SORT_LATEST | SEARCH_CATEGORY_MUSIC, 1);
 
     csn_result_t *head = result;
     while (head) {
