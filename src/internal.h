@@ -51,9 +51,9 @@
 #define CSN_S_SEARCH_ALBUM                      "album"
 #define CSN_S_SEARCH_LYRICS                     "lyric"
 
-#define CSN_S_SEARCH_MOST_LOVED_FIRST           ""
-#define CSN_S_SEARCH_BEST_QUALITY_FIRST         "quality"
-#define CSN_S_SEARCH_LASTEST_FIRST              "time"
+#define CSN_S_SEARCH_SORT_MOST_LOVED            ""
+#define CSN_S_SEARCH_SORT_BEST_QUALITY          "quality"
+#define CSN_S_SEARCH_SORT_LATEST               "time"
 
 #define CSN_S_SEARCH_CATEGORY_MUSIC             "music"
 #define CSN_S_SEARCH_CATEGORY_BEAT              "playback"

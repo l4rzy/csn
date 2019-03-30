@@ -30,9 +30,9 @@ enum {
     SEARCH_ALBUM                = 1 << 4,
     SEARCH_LYRICS               = 1 << 5,
 
-    SEARCH_MOST_LOVED_FIRST     = 1 << 6,
-    SEARCH_BEST_QUALITY_FIRST   = 1 << 7,
-    SEARCH_LASTEST_FIRST        = 1 << 8,
+    SEARCH_SORT_MOST_LOVED      = 1 << 6,
+    SEARCH_SORT_BEST_QUALITY    = 1 << 7,
+    SEARCH_SORT_LATEST         = 1 << 8,
 
     SEARCH_CATEGORY_MUSIC       = 1 << 9,
     SEARCH_CATEGORY_BEAT        = 1 << 10,

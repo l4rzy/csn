@@ -27,5 +27,8 @@ $ cd build && ninja
 $ ninja test
 ```
 
+## Licence
+MIT
+
 ## Author(s)
 * l4rzy (l4.foss@gmail.com)
