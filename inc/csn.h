@@ -32,7 +32,7 @@ enum {
 
     SEARCH_SORT_MOST_LOVED      = 1 << 6,
     SEARCH_SORT_BEST_QUALITY    = 1 << 7,
-    SEARCH_SORT_LATEST         = 1 << 8,
+    SEARCH_SORT_LATEST          = 1 << 8,
 
     SEARCH_CATEGORY_MUSIC       = 1 << 9,
     SEARCH_CATEGORY_BEAT        = 1 << 10,
