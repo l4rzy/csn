@@ -1,6 +1,5 @@
 #include "internal.h"
 
-#ifdef ENABLE_DEBUG
 static void print_node(TidyNode n) {
     const char *name = tidyNodeGetName(n);
     printf("line: %d <%s ", tidyNodeLine(n), name);
@@ -51,7 +50,7 @@ void dump_node(TidyDoc doc, TidyNode tnod, int indent) {
     for (child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
         switch (tidyNodeGetType(child)) {
         case TidyNode_Start:
-            printf("<%s ", tidyNodeGetName(child));
+            printf("%*s<%s ", indent, "", tidyNodeGetName(child));
             for (attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr)) {
                 printf("%s=\"%s\" ", tidyAttrName(attr), tidyAttrValue(attr));
             }
@@ -65,17 +64,17 @@ void dump_node(TidyDoc doc, TidyNode tnod, int indent) {
                 TidyBuffer buf;
                 tidyBufInit(&buf);
                 tidyNodeGetText(doc, child, &buf);
-                printf("%s", buf.bp);
+                printf("%*s%s", indent, "", buf.bp);
+                tidyBufFree(&buf);
             } while (0);
             break;
         default:
             break;
 
         }
-        dump_node(doc, child, indent + 4); /* recursive */
+        dump_node(doc, child, indent + 2); /* recursive */
     }
 }
-#endif
 
 TidyNode traverse_to_xpath(TidyNode root, csn_xpath_t *xp) {
     int index;
@@ -136,7 +135,7 @@ _traverse_error:
     return NULL;
 }
 
-/* parse in each entry
+/* parse in each entry in result of songs
  * scheme:
  *   1st child node: # of result
  *   2nd child node: song name and artist
@@ -144,7 +143,7 @@ _traverse_error:
  *   6th: download count
  * let's dig it
  */
-csn_result_t *parse_entry(TidyDoc doc, TidyNode tnod) {
+csn_result_t *parse_song_entry(TidyDoc doc, TidyNode tnod) {
     TidyNode child;
     int i;
 
@@ -154,30 +153,50 @@ csn_result_t *parse_entry(TidyDoc doc, TidyNode tnod) {
         return NULL;
     }
 
+    csn_xpath_t *to_name = csn_xpath_parse("/div/div/p/a/end");
+    // create new result as a song
+    csn_result_t *r = csn_result_new(true);
+
     for (child = tidyGetChild(tnod), i = 0;
-         child;
-         child = tidyGetNext(child), ++i) {
+            child;
+            child = tidyGetNext(child), ++i) {
 
         switch (i) {
-            case 1: // song name & artist
-                dump_node(doc, child, 0);
+        case 1: // song name & artist
+            dump_node(doc, child, 0);
+            TidyNode tg = traverse_to_xpath(child, to_name);
+            print_node(tg);
             break;
 
-            case 2: // duration and max quality
-                dump_node(doc, child, 0);
+        case 2: // duration and max quality
+            do {
+                TidyNode c = tidyGetChild(child);
+                dump_node(doc, c, 0);
+            } while (0);
+            puts("======");
             break;
 
-            case 5: // download count
-                dump_node(doc, child, 0);
+        case 5: // download count
+            do {
+                TidyNode c = tidyGetChild(child);
+                dump_node(doc, c, 0);
+            } while (0);
+            puts("===");
             break;
-            default:
+        default:
             break;
         }
     }
+
+    // free xpath
+    csn_xpath_free(to_name);
     return NULL;
 }
 
 csn_result_t *parse_search_result(TidyDoc doc) {
+#ifdef ENABLE_DEBUG
+    _t_start = clock();
+#endif
     // get root node from document, and pass it to the traversing function
     // we'll get
     TidyNode root = tidyGetRoot(doc);
@@ -198,7 +217,7 @@ csn_result_t *parse_search_result(TidyDoc doc) {
     // loop in all subnode, and call parse_entry() to generate a result node
     TidyNode child;
     for (child = tidyGetChild(target); child; child = tidyGetNext(child)) {
-        csn_result_t *rslt = parse_entry(doc, child);
+        csn_result_t *rslt = parse_song_entry(doc, child);
         if (rslt) {
             if (!rhead) {
                 // set that result as head
@@ -211,9 +230,16 @@ csn_result_t *parse_search_result(TidyDoc doc) {
                 rptr = rslt;
             }
         }
-        logs("This child doesn't return any results\n");
+        else {
+            logs("This child doesn't return any results\n");
+        }
     }
     csn_xpath_free(search_xpath);
+#ifdef ENABLE_DEBUG
+    _t_end = clock();
+
+    logf("Took %ld to finish\n", _t_end - _t_start);
+#endif
 
     return rhead;
 _parse_error:
