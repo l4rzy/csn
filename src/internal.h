@@ -3,6 +3,13 @@
 
 #include "csn.h"
 
+#ifdef ENABLE_DEBUG
+#include <time.h>
+
+clock_t _t_start, _t_end;
+
+#endif
+
 /* chiasenhac.com */
 #define CSN_SEARCH_URL          "http://search.chiasenhac.vn/search.php"
 #define CSN_HOME_URL            "http://old.chiasenhac.vn"
@@ -53,7 +60,7 @@
 
 #define CSN_S_SEARCH_SORT_MOST_LOVED            ""
 #define CSN_S_SEARCH_SORT_BEST_QUALITY          "quality"
-#define CSN_S_SEARCH_SORT_LATEST               "time"
+#define CSN_S_SEARCH_SORT_LATEST                "time"
 
 #define CSN_S_SEARCH_CATEGORY_MUSIC             "music"
 #define CSN_S_SEARCH_CATEGORY_BEAT              "playback"
