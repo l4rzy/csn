@@ -15,6 +15,9 @@ static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
  * further pages in order to get the number of results as user wanted
  */
 static char *build_search_url(const char *str, int options, int limit) {
+#ifdef ENABLE_DEBUG
+    _t_start = clock();
+#endif
     buf_t *search_type = csn_buf_new(0);
     buf_t *search_sort = csn_buf_new(0);
     buf_t *search_cat  = csn_buf_new(0);
@@ -68,6 +71,10 @@ static char *build_search_url(const char *str, int options, int limit) {
     csn_buf_free(search_type);
     csn_buf_free(search_sort);
     csn_buf_free(search_cat);
+#ifdef ENABLE_DEBUG
+    _t_end = clock();
+    logf("Took %ld to complete\n", _t_end - _t_start);
+#endif
     return strdup(temp);
 }
 
