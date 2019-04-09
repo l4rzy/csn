@@ -49,7 +49,6 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
         if (*ptr == '/') {
             // create new node, if there is no root, set it as root
             if (!root) {
-                logs("Creating root node\n");
                 root = csn_xpath_new();
                 root->is_root = true;
                 root->next = NULL;
@@ -62,7 +61,6 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             else {
                 ++ptr;
                 // consume until `/` or `[`
-                logf("Start consuming from %p\n", ptr);
                 while (*ptr != '/' &&
                        *ptr != '[' &&
                        *ptr != ']' &&
@@ -71,11 +69,9 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
                     ++ptr;
                 }
                 // stop, then set last char to null
-                logf("End consuming at %p, *ptr = %c\n", ptr, *ptr);
                 buffer[buflen] = '\0';
 
                 // create new node
-                logf("New subnode %s\n", buffer);
                 csn_xpath_t *xnode = csn_xpath_new();
                 csn_buf_write(xnode->tag, buffer);
                 xnode->is_root = false;
@@ -92,7 +88,6 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
             }
         }
         if (*ptr == '[') {
-            logs("Indexing, consuming\n");
             // consume until ]
             ++ptr;
             while (*ptr != ']' &&
@@ -104,13 +99,11 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
                 ++ptr;
             }
 
-            logf("End consuming at %p, *ptr = %c\n", ptr, *ptr);
             // stop, then set last char to null
             buffer[buflen] = '\0';
 
             // convert it to int;
             xptr->index = strtol(buffer, NULL, 10);
-            logf("index: %d\n", xptr->index);
             //reset buflen
             buflen = 0;
             ++ptr;
