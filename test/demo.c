@@ -1,10 +1,16 @@
 #include "csn.h"
 
 int print_entry(csn_result_t *r) {
-    if (r->is_song)
-        printf("name: %s\nlink: %s\n", r->song->name->str, r->song->link->str);
-    else
-        printf("name: %s\nlink: %s\n", r->album->name->str, r->album->link->str);
+    if (r->is_song) {
+        printf("link: %s\ntitle: %s\nartist: %s\nlength: %s\nmax_qual: %s\ndownloads: %s\n",
+            r->song->link->str,
+            r->song->title->str,
+            r->song->artist->str,
+            r->song->duration->str,
+            r->song->max_quality->str,
+            r->song->download_count->str
+);
+    }
     return 0;
 }
 
@@ -20,9 +26,11 @@ int main(int argc, char *argv[]) {
     csn_result_t *head = result;
     while (head) {
         print_entry(head);
+        puts("=====");
         head = head->next;
     }
 
+    csn_result_free(result);
     csn_free(ctx);
     return 0;
 }
