@@ -91,8 +91,8 @@ typedef struct _csn_queue_t {
 /* xpath functions */
 csn_xpath_t *csn_xpath_parse(const char *);
 csn_xpath_t *csn_xpath_new();
+TidyNode csn_xpath_traverse(TidyNode, csn_xpath_t *);
 void csn_xpath_free(csn_xpath_t *);
-TidyNode csn_traverse_to_xpath(TidyNode, csn_xpath_t *);
 
 /* queue functions */
 csn_node_t *csn_node_new();
@@ -110,18 +110,19 @@ void *_xrealloc(void *, size_t);
 #define xcalloc(x) _xcalloc(x)
 #define xrealloc(x, y) _xrealloc(x, y)
 
-/* buf_t functions */
+/* buf_t and string functions */
 buf_t *csn_buf_new(size_t);
 buf_t *csn_buf_from_str(const char *);
 char *csn_buf_write(buf_t *, const char *);
 char *csn_buf_write_char(buf_t *, const char);
 char *csn_buf_append(buf_t *, const char *);
 char *csn_buf_append_char(buf_t *, const char);
+int csn_buf_trim(buf_t *);
 int csn_buf_free(buf_t *);
 
 /* parsing functions
  */
-csn_result_t *parse_search_result(TidyDoc);
+csn_result_t *parse_song_search_result(TidyDoc);
 
 /* function to create result
  */
@@ -131,5 +132,11 @@ csn_album_t *csn_album_new();
 csn_song_info_t *csn_song_info_new();
 csn_album_info_t *csn_album_info_new();
 csn_result_t *csn_result_new(bool is_song);
+
+/* other utilities
+ */
+char *build_search_url(const char *, int, int);
+
+extern int g_search_options;
 
 #endif

@@ -26,136 +26,77 @@ void *_xrealloc(void *ptr, size_t new_size) {
     return ptr;
 }
 
-/* === xpath functions === */
-
-/* parse xpath into linked list, this support a subset of xpath
- * and for use locally, so I guess this implementation is ok :)
+/* builds search url from options, currently lthe limit options is disable
+ * but in the future, maybe we'll make more than one request to get some
+ * further pages in order to get the number of results as user wanted
  */
-csn_xpath_t *csn_xpath_parse(const char *str) {
-    logf("Parsing `%s`\n", str);
+char *build_search_url(const char *str, int options, int limit) {
 #ifdef ENABLE_DEBUG
     _t_start = clock();
 #endif
-    if (!str) {
-        return NULL;
+    g_search_options = options;
+
+    buf_t *search_type = csn_buf_new(0);
+    buf_t *search_sort = csn_buf_new(0);
+    buf_t *search_cat  = csn_buf_new(0);
+
+    /* failed to do it the more rational way due to the limitation of
+     * C macro system
+     */
+#define TYPE_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_type, s); \
     }
 
-    csn_xpath_t *root = NULL;
-    csn_xpath_t *xptr;
-    const char *ptr = str;
-    char buffer[1024]; // assume that it's no bigger than 1023
-    int buflen = 0;
+#define SORT_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_sort, s); \
+    }
 
-    while (1) {
-        if (*ptr == '\0' ) {
-            break;
-        }
-        if (*ptr == '/') {
-            // create new node, if there is no root, set it as root
-            if (!root) {
-                root = csn_xpath_new();
-                root->is_root = true;
-                root->next = NULL;
+#define CAT_CASE(op, s) \
+    if (options & op) { \
+        csn_buf_write(search_cat, s); \
+    }
 
-                xptr = root;
+    TYPE_CASE(SEARCH_ARTIST, CSN_S_SEARCH_ARTIST);
+    TYPE_CASE(SEARCH_SONG, CSN_S_SEARCH_SONG);
+    TYPE_CASE(SEARCH_COMPOSER, CSN_S_SEARCH_COMPOSER);
+    TYPE_CASE(SEARCH_ALBUM, CSN_S_SEARCH_ALBUM);
+    TYPE_CASE(SEARCH_LYRICS, CSN_S_SEARCH_LYRICS);
 
-                // then continue
-                continue;
-            }
-            else {
-                ++ptr;
-                // consume until `/` or `[`
-                while (*ptr != '/' &&
-                       *ptr != '[' &&
-                       *ptr != ']' &&
-                       *ptr != '\0') {
-                    buffer[buflen++] = *ptr;
-                    ++ptr;
-                }
-                // stop, then set last char to null
-                buffer[buflen] = '\0';
+    SORT_CASE(SEARCH_SORT_MOST_LOVED, CSN_S_SEARCH_SORT_MOST_LOVED);
+    SORT_CASE(SEARCH_SORT_BEST_QUALITY, CSN_S_SEARCH_SORT_BEST_QUALITY);
+    SORT_CASE(SEARCH_SORT_LATEST, CSN_S_SEARCH_SORT_LATEST);
 
-                // create new node
-                csn_xpath_t *xnode = csn_xpath_new();
-                csn_buf_write(xnode->tag, buffer);
-                xnode->is_root = false;
-                xnode->next = NULL;
-                xnode->index = 1; // predicate set to one
+    CAT_CASE(SEARCH_CATEGORY_MUSIC, CSN_S_SEARCH_CATEGORY_MUSIC);
+    CAT_CASE(SEARCH_CATEGORY_BEAT, CSN_S_SEARCH_CATEGORY_BEAT);
+    CAT_CASE(SEARCH_CATEGORY_VIDEO, CSN_S_SEARCH_CATEGORY_VIDEO);
 
-                // current node points to this node
-                // set current node pointer to this node
-                xptr->next = xnode;
-                xptr = xnode;
+#undef TYPE_CASE
+#undef SORT_CASE
+#undef CAT_CASE
 
-                // reset buflen
-                buflen = 0;
-            }
-        }
-        if (*ptr == '[') {
-            // consume until ]
-            ++ptr;
-            while (*ptr != ']' &&
-                   *ptr != '\0') {
-                if (!isdigit(*ptr)) {
-                    goto _parse_error;
-                }
-                buffer[buflen++] = *ptr;
-                ++ptr;
-            }
+    logf("search options:\ntype: %s\nsort: %s\ncat: %s\n", search_type->str, search_sort->str, search_cat->str);
 
-            // stop, then set last char to null
-            buffer[buflen] = '\0';
+    char temp[1024]; //TODO: fix this
+    const char *search_fmt = CSN_SEARCH_URL"?s=%s&mode=%s&order=%s&cat=%s";
 
-            // convert it to int;
-            xptr->index = strtol(buffer, NULL, 10);
-            //reset buflen
-            buflen = 0;
-            ++ptr;
-        }
-        if (*ptr == ']') {
-            goto _parse_error;
-        }
-    } // while
+    sprintf(temp, search_fmt, str, search_type->str, search_sort->str, search_cat->str);
+    logf("%s\n", temp);
 
+    /* free stuff
+     */
+    csn_buf_free(search_type);
+    csn_buf_free(search_sort);
+    csn_buf_free(search_cat);
 #ifdef ENABLE_DEBUG
     _t_end = clock();
     logf("Took %ld to complete\n", _t_end - _t_start);
 #endif
-    return root;
-
-_parse_error:
-    // free all allocated chunks
-    csn_xpath_free(root);
-
-    logs("Parsing error\n");
-    return NULL;
-}
-
-csn_xpath_t *csn_xpath_new() {
-    csn_xpath_t *ret = xalloc(sizeof(csn_xpath_t));
-    ret->tag = csn_buf_new(1);
-
-    return ret;
-}
-
-/* recursive structure, free the head itself
- */
-void csn_xpath_free(csn_xpath_t *xp) {
-    logf("Freeing xpath at %p\n", xp);
-    csn_xpath_t *tmp, *xptr;
-    xptr = xp;
-    tmp = xptr;
-
-    while (tmp) {
-        csn_buf_free(tmp->tag);
-        free(tmp);
-        xptr = xptr->next;
-        tmp = xptr;
-    }
+    return strdup(temp);
 }
 
 /* === queue implementation === */
-
 csn_node_t *csn_node_new() {
     csn_node_t *node = xalloc(sizeof(csn_node_t));
     return node;
@@ -230,109 +171,3 @@ void csn_queue_print(csn_queue_t *q) {
     logf("Tail is at %p\n", q->tail);
 }
 #endif
-
-/* === buf_t implementation === */
-buf_t *csn_buf_new(size_t size) {
-    buf_t *ret = xalloc(sizeof(buf_t));
-
-    ret->str = xcalloc(size + 1);
-    ret->len = 0;
-
-    return ret;
-}
-
-buf_t *csn_buf_from_str(const char *str) {
-    int len = strlen(str);
-    buf_t *buf = csn_buf_new(len + 1);
-
-    memcpy(buf->str, str, len);
-    buf->len = len;
-    return buf;
-}
-
-char *csn_buf_write(buf_t *buf, const char *str) {
-    int new_len = strlen(str);
-    if (!buf) {
-        logs("write to unallocated buf\n");
-        buf = csn_buf_new(new_len + 1);
-    }
-
-    // realloc if new str differs
-    if (new_len != buf->len) {
-        buf->str = xrealloc(buf->str, new_len + 1);
-    }
-    buf->len = new_len;
-    memcpy(buf->str, str, buf->len);
-    buf->str[buf->len] = '\0';
-    return buf->str;
-}
-
-char *csn_buf_write_char(buf_t *buf, const char c) {
-    // write a char at 0 position without realloc
-    buf->str[0] = c;
-    buf->len = 1;
-    buf->str[1] = '\0';
-
-    return buf->str;
-}
-
-char *csn_buf_append(buf_t *buf, const char *str) {
-    int old = buf->len;
-    int new_len = strlen(str);
-    buf->len += new_len; // new len
-    buf->str = xrealloc(buf->str, buf->len + 1);
-
-    memcpy(buf->str + old, str, new_len);
-    buf->str[buf->len] = '\0';
-
-    return buf->str;
-}
-
-char *csn_buf_append_char(buf_t *buf, const char c) {
-    buf->str = xrealloc(buf->str, buf->len + 2);
-    buf->str[buf->len] = c;
-    buf->str[++(buf->len)] = '\0';
-
-    return buf->str;
-}
-
-int csn_buf_free(buf_t *buf) {
-    free(buf->str);
-    free(buf);
-    return 0;
-}
-
-/* ======== */
-csn_download_t *csn_download_new() {
-    csn_download_t *dl = xalloc(sizeof(csn_download_t));
-    return dl;
-}
-
-csn_song_t *csn_song_new(int type) {
-    csn_song_t *s = xalloc(sizeof(csn_song_t));
-    s->type = type;
-
-    return s;
-}
-
-csn_album_t *csn_album_new() {
-    csn_album_t *a = xalloc(sizeof(csn_album_t));
-    return a;
-}
-
-csn_song_info_t *csn_song_info_new() {
-    csn_song_info_t *si = xalloc(sizeof(csn_song_info_t));
-    return si;
-}
-
-csn_album_info_t *csn_album_info_new() {
-    csn_album_info_t *ai = xalloc(sizeof(csn_album_info_t));
-    return ai;
-}
-
-csn_result_t *csn_result_new(bool is_song) {
-    csn_result_t *r = xalloc(sizeof(csn_result_t));
-
-    r->is_song = is_song;
-    return r;
-}

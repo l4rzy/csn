@@ -1,4 +1,4 @@
-cc=gcc
+cc=gcc -g
 cxx=g++
 ld=gcc
 csn=build/libcsn.so
