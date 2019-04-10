@@ -218,10 +218,12 @@ void csn_song_info_free(csn_song_info_t *si) {
 
 void csn_song_free(csn_song_t *s) {
     if (s) {
-        csn_buf_free(s->name);
+        csn_buf_free(s->title);
+        csn_buf_free(s->artist);
         csn_buf_free(s->link);
         csn_buf_free(s->duration);
         csn_buf_free(s->max_quality);
+        csn_buf_free(s->download_count);
 
         free(s);
     }
@@ -229,7 +231,7 @@ void csn_song_free(csn_song_t *s) {
 
 void csn_album_free(csn_album_t *a) {
     if (a) {
-        csn_buf_free(a->name);
+        csn_buf_free(a->title);
         csn_buf_free(a->link);
         csn_buf_free(a->cover);
         csn_buf_free(a->max_quality);
