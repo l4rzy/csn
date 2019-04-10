@@ -113,6 +113,7 @@ void *_xrealloc(void *, size_t);
 /* buf_t and string functions */
 buf_t *csn_buf_new(size_t);
 buf_t *csn_buf_from_str(const char *);
+buf_t *csn_buf_possess(char *);
 char *csn_buf_write(buf_t *, const char *);
 char *csn_buf_write_char(buf_t *, const char);
 char *csn_buf_append(buf_t *, const char *);

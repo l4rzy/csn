@@ -1,6 +1,40 @@
 #include "internal.h"
 #include <ctype.h>
 
+/* trim string inplace, so no need to allocate new memory
+ */
+char *string_trim(char *str) {
+    char *head, *tail;
+    head = str;
+    while (1) {
+        if (isspace(*head)) {
+            ++head;
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+
+    tail = str + strlen(str) - 1; // last char
+    while (1) {
+        if (isspace(*tail)) {
+            --tail;
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+
+    memmove(str, head, tail-head+1);
+    xrealloc(str, tail-head+2);
+    // set last char to null
+    str[tail-head+1] = '\0';
+
+    return str;
+}
+
 buf_t *csn_buf_new(size_t size) {
     buf_t *ret = xalloc(sizeof(buf_t));
 
@@ -8,6 +42,15 @@ buf_t *csn_buf_new(size_t size) {
     ret->len = 0;
 
     return ret;
+}
+
+buf_t *csn_buf_possess(char *str) {
+    int len = strlen(str);
+    buf_t *buf = xalloc(sizeof(buf_t));
+    buf->len = len;
+    buf->str = str;
+
+    return buf;
 }
 
 buf_t *csn_buf_from_str(const char *str) {
@@ -66,6 +109,8 @@ char *csn_buf_append_char(buf_t *buf, const char c) {
 }
 
 int csn_buf_trim(buf_t *buf) {
+    string_trim(buf->str);
+    buf->len = strlen(buf->str);
     return 0;
 }
 

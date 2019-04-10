@@ -14,6 +14,8 @@ char *construct_sanitized_string(char c, int len) {
     return r;
 }
 
+/* a bunch of mem leaks here
+ */
 int main() {
     char *temp;
     const char *saying = "The mark of an immature man is that he wants to \
@@ -43,6 +45,28 @@ wants to live humbly for one.";
     ASSERT(buf->len == 1);
     ASSERT(buf->str[1] == '\0');
     print_buf(buf);
+
+    temp = construct_sanitized_string('~', 1024);
+    buf = csn_buf_possess(temp);
+    print_buf(buf);
+    ASSERT(buf->len == 1024);
+
+    temp = construct_sanitized_string('\n', 1024);
+    temp[1] = 'a';
+    csn_buf_write(buf, temp);
+    ASSERT(buf->len == 1024);
+    csn_buf_trim(buf);
+    print_buf(buf);
+    ASSERT(buf->len == 1);
+    free(temp);
+
+    temp = construct_sanitized_string(' ', 1024);
+    temp[1] = 'a';
+    csn_buf_write(buf, temp);
+    ASSERT(buf->len == 1024);
+    csn_buf_trim(buf);
+    print_buf(buf);
+    ASSERT(buf->len == 1);
 
     csn_buf_free(buf);
     free(buf);
