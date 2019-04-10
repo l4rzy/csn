@@ -22,7 +22,9 @@ lib_deps = [curl_dep, tidy_dep]
 lib_sources = files(
   'src/csn.c',
   'src/parser.c',
-  'src/util.c'
+  'src/buf.c',
+  'src/xpath.c',
+  'src/util.c',
 )
 
 shlib = shared_library('csn', lib_sources,

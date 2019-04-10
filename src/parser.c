@@ -1,9 +1,10 @@
 #include "internal.h"
 
-static csn_xpath_t *to_name, *to_len, *to_count;
+static csn_xpath_t *to_type, *to_name, *to_len, *to_count;
 
 static void print_node(TidyDoc d, TidyNode n) {
     if (!n) {
+        logs("Node doesn't exist\n");
         return;
     }
     const char *name = tidyNodeGetName(n);
@@ -25,91 +26,32 @@ static void print_node(TidyDoc d, TidyNode n) {
     }
 }
 
-/* traverses from a node to local xpath
- */
-TidyNode traverse_to_xpath(TidyNode root, csn_xpath_t *xp) {
-#ifdef ENABLE_DEBUG
-    _t_start = clock();
-#endif
-    int index;
-    TidyNode node, child; // current node
-    csn_xpath_t *xptr; // current pointer in xpath
-
-    /* initialization
-     */
-    index = 0;
-    node = root;
-    xptr = xp->next; // skip the root node in xpath
-
-_traverse_loop:
-    // stop condition
-    if (xptr == NULL) {
-        goto _traverse_exit;
-    }
-    logf("Current at xpath node: %s[%d]\n", xptr->tag->str, xptr->index);
-
-    // check all its children for the child that satisties the xpath
-    //
-    for (child = tidyGetChild(node); child; child = tidyGetNext(child)) {
-        const char *child_name = tidyNodeGetName(child);
-        if (!child_name) {
-            continue;
-        }
-
-        logf("Current child tag: %s[%d]\n", child_name, index);
-        if (!strcmp(xptr->tag->str, child_name)) {
-            ++index;
-            // next index in case they didn't match
-            if (xptr->index != index) {
-                continue;
-            }
-            logs("Matching\n");
-            // starting again from the child
-            // set current node to child, go to the next level of xpath
-            node = child;
-            index = 0;
-            xptr = xptr->next;
-
-            goto _traverse_loop;
-        }
-    }
-    // there's no child that's satisfied
-    logs("Found no satisfied child\n");
-    goto _traverse_error;
-
-_traverse_exit:
-#ifdef ENABLE_DEBUG
-    _t_end = clock();
-
-    logf("Took %ld to finish\n", _t_end - _t_start);
-#endif
-    logs("Traversed successfully!\n");
-    return node;
-
-_traverse_error:
-    logs("Error traversing\n");
-    return NULL;
-}
-
 /* parse in each entry in result of songs
  */
 csn_result_t *parse_song_entry(TidyDoc doc, TidyNode tnod) {
-    TidyNode child;
-    int i;
-
     TidyAttr attr = tidyAttrFirst(tnod);
     if (!attr) {
         logs("This is the column header\n");
         goto _entry_error;
     }
 
+    /* some variables
+     */
+    csn_result_t *ret = csn_result_new(true);
     TidyNode target;
 #define TO_XPATH(x) \
-    target = traverse_to_xpath(tnod, x); \
+    target = csn_xpath_traverse(tnod, x); \
     if (!target) { \
         logs("Could not traverse to xpath!\n"); \
         goto _entry_error; \
     }
+
+    //type
+    target = csn_xpath_traverse(tnod, to_type);
+    if (!target) {
+        ret->song->type = CSN_TYPE_SONG;
+    }
+
     /* song name and artist
      * child of current node contains link and song name
      * next node contains artist
@@ -118,14 +60,30 @@ csn_result_t *parse_song_entry(TidyDoc doc, TidyNode tnod) {
 #ifdef ENABLE_DEBUG
     print_node(doc, target);
 #endif
+    TidyNode tmp_node = tidyGetChild(target);
+    if (!tmp_node) {
+        goto _entry_error;
+    }
 
+    // link
+    for (attr = tidyAttrFirst(tmp_node); attr; attr = tidyAttrNext(attr)) {
+        if (!strcmp("href", tidyAttrName(attr))) {
+            ret->song->link = csn_buf_from_str(tidyAttrValue(attr));
+        }
+    }
+
+    // artist
+    tmp_node = tidyGetChild(tmp_node);
+    print_node(doc, tmp_node);
+
+    return ret;
 
 #undef TO_XPATH
 _entry_error:
     return NULL;
 }
 
-csn_result_t *parse_search_result(TidyDoc doc) {
+csn_result_t *parse_song_search_result(TidyDoc doc) {
 #ifdef ENABLE_DEBUG
     _t_start = clock();
 #endif
@@ -140,13 +98,14 @@ csn_result_t *parse_search_result(TidyDoc doc) {
     logs("Traversing to xpath\n");
 
     // the target node we wanted to traverse to
-    TidyNode target = traverse_to_xpath(root, search_xpath);
+    TidyNode target = csn_xpath_traverse(root, search_xpath);
     if (!target) {
         logs("Could not traverse to xpath\n");
         goto _parse_error;
     }
 
     // prepare sub xpaths to traverse to
+    to_type = csn_xpath_parse("/td[1]/p/a/img");
     to_name = csn_xpath_parse("/td[2]/div/div/p[1]");
     to_len = csn_xpath_parse("/td[3]/span");
     to_count = csn_xpath_parse("/td[6]/p[1]");
@@ -157,11 +116,13 @@ csn_result_t *parse_search_result(TidyDoc doc) {
         csn_result_t *rslt = parse_song_entry(doc, child);
         if (rslt) {
             if (!rhead) {
+                logs("Set result to head\n");
                 // set that result as head
                 rhead = rslt;
                 rptr = rhead;
             }
             else {
+                logs("Append new result\n");
                 // link to rptr
                 rptr->next = rslt;
                 rptr = rslt;
