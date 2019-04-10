@@ -304,34 +304,34 @@ int csn_buf_free(buf_t *buf) {
 
 /* ======== */
 csn_download_t *csn_download_new() {
-    csn_download_t *dl = xalloc(sizeof(csn_download_t));
+    csn_download_t *dl = xcalloc(sizeof(csn_download_t));
     return dl;
 }
 
 csn_song_t *csn_song_new(int type) {
-    csn_song_t *s = xalloc(sizeof(csn_song_t));
+    csn_song_t *s = xcalloc(sizeof(csn_song_t));
     s->type = type;
 
     return s;
 }
 
 csn_album_t *csn_album_new() {
-    csn_album_t *a = xalloc(sizeof(csn_album_t));
+    csn_album_t *a = xcalloc(sizeof(csn_album_t));
     return a;
 }
 
 csn_song_info_t *csn_song_info_new() {
-    csn_song_info_t *si = xalloc(sizeof(csn_song_info_t));
+    csn_song_info_t *si = xcalloc(sizeof(csn_song_info_t));
     return si;
 }
 
 csn_album_info_t *csn_album_info_new() {
-    csn_album_info_t *ai = xalloc(sizeof(csn_album_info_t));
+    csn_album_info_t *ai = xcalloc(sizeof(csn_album_info_t));
     return ai;
 }
 
 csn_result_t *csn_result_new(bool is_song) {
-    csn_result_t *r = xalloc(sizeof(csn_result_t));
+    csn_result_t *r = xcalloc(sizeof(csn_result_t));
 
     r->is_song = is_song;
     return r;
