@@ -14,7 +14,8 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     csn_ctx_t *ctx = csn_init();
-    csn_result_t *result = csn_search(ctx, argv[1], SEARCH_SONG | SEARCH_SORT_LATEST | SEARCH_CATEGORY_MUSIC, 1);
+    csn_result_t *result = csn_search(ctx, argv[1],
+            SEARCH_SONG | SEARCH_SORT_BEST_QUALITY | SEARCH_CATEGORY_MUSIC, 1);
 
     csn_result_t *head = result;
     while (head) {
