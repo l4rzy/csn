@@ -32,6 +32,9 @@ void *_xrealloc(void *ptr, size_t new_size) {
  * and for use locally, so I guess this implementation is ok :)
  */
 csn_xpath_t *csn_xpath_parse(const char *str) {
+#ifdef ENABLE_DEBUG
+    _t_start = clock();
+#endif
     if (!str) {
         return NULL;
     }
@@ -76,7 +79,7 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
                 csn_buf_write(xnode->tag, buffer);
                 xnode->is_root = false;
                 xnode->next = NULL;
-                xnode->index = 0;
+                xnode->index = 1; // predicate set to one
 
                 // current node points to this node
                 // set current node pointer to this node
@@ -113,6 +116,10 @@ csn_xpath_t *csn_xpath_parse(const char *str) {
         }
     } // while
 
+#ifdef ENABLE_DEBUG
+    _t_end = clock();
+    logf("Took %ld to complete\n", _t_end - _t_start);
+#endif
     return root;
 
 _parse_error:
