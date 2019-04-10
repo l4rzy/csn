@@ -32,6 +32,7 @@ void *_xrealloc(void *ptr, size_t new_size) {
  * and for use locally, so I guess this implementation is ok :)
  */
 csn_xpath_t *csn_xpath_parse(const char *str) {
+    logf("Parsing `%s`\n", str);
 #ifdef ENABLE_DEBUG
     _t_start = clock();
 #endif
