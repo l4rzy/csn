@@ -22,6 +22,16 @@ $ meson build
 $ cd build && ninja
 ```
 
+## Demo
+Since this is a library, it's neccessary to build a demo program to test
+```sh
+$ make
+$ export LD_LIBRARY_PATH=./build
+$ ./demo "shallow"
+```
+The result should look like this
+![demo](test/demo.png)
+
 ## Run tests
 ```sh
 $ ninja test
