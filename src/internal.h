@@ -18,6 +18,8 @@ clock_t _t_start, _t_end;
 #define CSN_HOT_VN_XPATH        "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[2]/div[2]"
 #define CSN_HOT_USUK_XPATH      "/html/body/div[1]/div/div[3]/div/div[4]/div/div[5]/div/div[2]/div[2]"
 #define CSN_SEARCH_XPATH        "/html/body/div[1]/div/div[3]/div/div/div[5]/div[1]/div[3]/div[2]/table"
+#define CSN_SONG_INFO_XPATH     "/html/body/div[1]/div/div[3]/div[2]/div/div[5]/div/div[3]/div/div/a[2]"
+#define CSN_DOWNLOAD_XPATH      "/html/body/div[1]/div/div[3]/div[1]/div/div[5]/div/div[2]/div[2]/div/div[5]/div/b[1]"
 
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \
@@ -124,6 +126,7 @@ int csn_buf_free(buf_t *);
 /* parsing functions
  */
 csn_result_t *parse_song_search_result(TidyDoc);
+csn_song_info_t *parse_song_info_result(TidyDoc);
 
 /* function to create result
  */
@@ -137,6 +140,7 @@ csn_result_t *csn_result_new(bool is_song);
 /* other utilities
  */
 char *build_search_url(const char *, int, int);
+char *old_csn_url(const char *);
 
 extern int g_search_options;
 

@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
         head = head->next;
     }
 
+    csn_fetch_song_info(ctx, result->song);
+
     csn_result_free(result);
     csn_free(ctx);
     return 0;

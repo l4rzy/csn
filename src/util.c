@@ -96,6 +96,22 @@ char *build_search_url(const char *str, int options, int limit) {
     return strdup(temp);
 }
 
+/* TODO: rewriting this the right way
+ */
+char *old_csn_url(const char *surl) {
+/* http://beta.chiasenhac.vn/mp3/vietnam/v-pop/mua-hoa-bo-lai~thu-phuong~ts3vqd5rq2emha.html
+ * => http://chiasenhac.vn/mp3/vietnam/v-pop/mua-hoa-bo-lai~thu-phuong~ts3vqd5rq2emha.html
+ */
+    char *ret = strdup(surl);
+    int len = strlen(ret);
+    memmove(ret + 4, ret + 5, len - 5 + 1);
+    memcpy(ret + 11, ret + 12, len - 12 + 1);
+    memcpy(ret + 7, "old.", 4);
+
+    ret = xrealloc(ret, len - 2);
+    return ret;
+}
+
 /* === queue implementation === */
 csn_node_t *csn_node_new() {
     csn_node_t *node = xalloc(sizeof(csn_node_t));

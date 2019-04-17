@@ -227,3 +227,44 @@ csn_result_t *parse_song_search_result(TidyDoc doc) {
 _parse_error:
     return NULL;
 }
+
+void dumpNode(TidyDoc doc, TidyNode tnod, int indent)
+{
+  TidyNode child;
+  for(child = tidyGetChild(tnod); child; child = tidyGetNext(child) ) {
+    ctmbstr name = tidyNodeGetName(child);
+    if(name) {
+      /* if it has a name, then it's an HTML tag ... */
+      TidyAttr attr;
+      printf("%*.*s%s ", indent, indent, "<", name);
+      /* walk the attribute list */
+      for(attr = tidyAttrFirst(child); attr; attr = tidyAttrNext(attr) ) {
+        printf(tidyAttrName(attr));
+        tidyAttrValue(attr)?printf("=\"%s\" ",
+                                   tidyAttrValue(attr)):printf(" ");
+      }
+      printf(">\n");
+    }
+    else {
+      /* if it doesn't have a name, then it's probably text, cdata, etc... */
+      TidyBuffer buf;
+      tidyBufInit(&buf);
+      tidyNodeGetText(doc, child, &buf);
+      printf("%*.*s\n", indent, indent, buf.bp?(char *)buf.bp:"");
+      tidyBufFree(&buf);
+    }
+    dumpNode(doc, child, indent + 4); /* recursive */
+  }
+}
+
+csn_song_info_t *parse_song_info_result(TidyDoc doc){
+    TidyNode root = tidyGetRoot(doc);
+
+    logs("Parsing xpath\n");
+    csn_xpath_t *info_xpath = csn_xpath_parse("/html/body/section/div[3]/div/div[1]/div[3]/div[2]/div[2]");
+    logs("Traversing to xpath\n");
+    TidyNode target = csn_xpath_traverse(root, info_xpath);
+
+    csn_xpath_free(info_xpath);
+    return NULL;
+}

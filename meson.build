@@ -7,7 +7,7 @@ csn_version = meson.project_version()
 
 ## compiler flags
 lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0', '-fuse-ld=gold']
-
+#lib_args = ['-march=native', '-fomit-frame-pointer', '-Wall', '-O3', '-fuse-ld=gold']
 ## dirs
 incdir = include_directories('inc')
 srcdir = include_directories('src')

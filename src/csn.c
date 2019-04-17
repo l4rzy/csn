@@ -94,6 +94,33 @@ csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type, int limit) {
 }
 
 csn_song_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_song_t *s) {
+    /*
+    char *surl = old_csn_url(s->link->str);
+    logf("old url: %s\n", surl);
+    curl_easy_setopt(ctx->curl, CURLOPT_URL, surl);
+    free(surl);
+    */
+    curl_easy_setopt(ctx->curl, CURLOPT_URL, s->link->str);
+    curl_easy_setopt(ctx->curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(ctx->curl, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0");
+    // perform the curl
+    logs("Getting data from chiasenhac\n");
+    ctx->err = curl_easy_perform(ctx->curl);
+    if (!ctx->err) {
+        ctx->err = tidyParseBuffer(ctx->tdoc, &ctx->docbuf); /* parse the input */
+        if (ctx->err >= 0) {
+            ctx->err = tidyCleanAndRepair(ctx->tdoc); /* fix any problems */
+            if (ctx->err >= 0) {
+                ctx->err = tidyRunDiagnostics(ctx->tdoc); /* load tidy error buffer */
+                if (ctx->err >= 0) {
+                    return parse_song_info_result(ctx->tdoc); /* walk the tree */
+                }
+            }
+        }
+    }
+    else {
+        fatals("Could not get data");
+    }
     return NULL;
 }
 
