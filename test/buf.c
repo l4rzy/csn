@@ -1,5 +1,4 @@
 #include <csn.h>
-#include <assert.h>
 #include "../src/internal.h"
 
 void print_buf(buf_t *b) {
@@ -14,61 +13,63 @@ char *construct_sanitized_string(char c, int len) {
     return r;
 }
 
-/* a bunch of mem leaks here
- */
 int main() {
     char *temp;
     const char *saying = "The mark of an immature man is that he wants to \
 die nobly for a cause, while the mark of a mature man is that he \
 wants to live humbly for one.";
-    buf_t *buf = csn_buf_from_str(saying);
-    ASSERT(buf->len == strlen(saying));
+    int saying_len = strlen(saying);
 
-    temp = construct_sanitized_string('A', 422);
-    csn_buf_append(buf, temp);
-    ASSERT(buf->len == strlen(saying) + 422);
-    print_buf(buf);
+    buf_t *buf = buf_new_str(saying);
+    ASSERT(!memcmp(buf->str, saying, saying_len));
+    ASSERT(buf->len == saying_len);
     free(temp);
+
+    buf_write_char(buf, 'A');
+    ASSERT(buf->len == 1);
 
     temp = construct_sanitized_string('B', 1024);
-    csn_buf_write(buf, temp);
+    buf_write_str(buf, temp);
     ASSERT(buf->len == 1024);
     print_buf(buf);
     free(temp);
 
-    csn_buf_append_char(buf, 'X');
-    ASSERT(buf->len == 1025);
+    temp = construct_sanitized_string('A', 422);
+    buf_append_str(buf, temp);
+    ASSERT(buf->len == 1024 + 422);
+    print_buf(buf);
+    free(temp);
+
+    buf_append_char(buf, 'X');
+    ASSERT(buf->len == 1024 + 422 + 1);
     ASSERT(buf->str[buf->len -1] == 'X');
     print_buf(buf);
-
-    csn_buf_write_char(buf, 'Z');
-    ASSERT(buf->len == 1);
-    ASSERT(buf->str[1] == '\0');
-    print_buf(buf);
+    buf_free(buf);
 
     temp = construct_sanitized_string('~', 1024);
-    buf = csn_buf_possess(temp);
+    buf = buf_new_possess(temp);
     print_buf(buf);
     ASSERT(buf->len == 1024);
+    free(temp);
 
     temp = construct_sanitized_string('\n', 1024);
     temp[1] = 'a';
-    csn_buf_write(buf, temp);
+    buf_write_str(buf, temp);
     ASSERT(buf->len == 1024);
-    csn_buf_trim(buf);
+    buf_trim(buf);
     print_buf(buf);
     ASSERT(buf->len == 1);
     free(temp);
 
     temp = construct_sanitized_string(' ', 1024);
     temp[1] = 'a';
-    csn_buf_write(buf, temp);
+    buf_write_str(buf, temp);
     ASSERT(buf->len == 1024);
-    csn_buf_trim(buf);
+    buf_trim(buf);
     print_buf(buf);
     ASSERT(buf->len == 1);
 
-    csn_buf_free(buf);
+    buf_free(buf);
     free(buf);
 }
 

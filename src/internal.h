@@ -111,15 +111,21 @@ void *_xrealloc(void *, size_t);
 #define xrealloc(x, y) _xrealloc(x, y)
 
 /* buf_t and string functions */
-buf_t *csn_buf_new(size_t);
-buf_t *csn_buf_from_str(const char *);
-buf_t *csn_buf_possess(char *);
-char *csn_buf_write(buf_t *, const char *);
-char *csn_buf_write_char(buf_t *, const char);
-char *csn_buf_append(buf_t *, const char *);
-char *csn_buf_append_char(buf_t *, const char);
-int csn_buf_trim(buf_t *);
-int csn_buf_free(buf_t *);
+buf_t *buf_new_size(size_t);
+buf_t *buf_new_mem(const char *, size_t);
+buf_t *buf_new_str(const char *);
+buf_t *buf_new_possess(const char *);
+
+char *buf_write_char(buf_t *, const char);
+char *buf_write_mem(buf_t *, const char *, size_t);
+char *buf_write_str(buf_t *, const char *);
+
+char *buf_append_char(buf_t *, const char);
+char *buf_append_mem(buf_t *, const char *, size_t);
+char *buf_append_str(buf_t *, const char *);
+
+int buf_trim(buf_t *);
+int buf_free(buf_t *);
 
 /* parsing functions
  */

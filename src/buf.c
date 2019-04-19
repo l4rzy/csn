@@ -3,7 +3,7 @@
 
 /* trim string inplace, so no need to allocate new memory
  */
-char *string_trim(char *str) {
+static char *string_trim(char *str) {
     char *head, *tail;
     head = str;
     while (1) {
@@ -35,7 +35,10 @@ char *string_trim(char *str) {
     return str;
 }
 
-buf_t *csn_buf_new(size_t size) {
+/* TO CREATE NEW
+ */
+// new buffer that has size of `size`
+buf_t *buf_new_size(size_t size) {
     buf_t *ret = xalloc(sizeof(buf_t));
 
     ret->str = xcalloc(size + 1);
@@ -44,7 +47,25 @@ buf_t *csn_buf_new(size_t size) {
     return ret;
 }
 
-buf_t *csn_buf_possess(char *str) {
+// new buffer from memory, then set the last char to '\0'
+buf_t *buf_new_mem(const char *mem, size_t size) {
+    buf_t *ret = buf_new_size(size);
+    ret->len = size;
+    memcpy(ret->str, mem, size);
+
+    return ret;
+}
+
+// new buffer from C string
+buf_t *buf_new_str(const char *str) {
+    int len = strlen(str);
+    buf_t *ret = buf_new_mem(str, len);
+
+    return ret;
+}
+
+// new buffer that possesses an existed string
+buf_t *buf_new_possess(const char *str) {
     int len = strlen(str);
     buf_t *buf = xalloc(sizeof(buf_t));
     buf->len = len;
@@ -53,34 +74,10 @@ buf_t *csn_buf_possess(char *str) {
     return buf;
 }
 
-buf_t *csn_buf_from_str(const char *str) {
-    int len = strlen(str);
-    buf_t *buf = csn_buf_new(len + 1);
-
-    memcpy(buf->str, str, len);
-    buf->len = len;
-    return buf;
-}
-
-char *csn_buf_write(buf_t *buf, const char *str) {
-    int new_len = strlen(str);
-    if (!buf) {
-        logs("write to unallocated buf\n");
-        buf = csn_buf_new(new_len + 1);
-    }
-
-    // realloc if new str differs
-    if (new_len != buf->len) {
-        buf->str = xrealloc(buf->str, new_len + 1);
-    }
-    buf->len = new_len;
-    memcpy(buf->str, str, buf->len);
-    buf->str[buf->len] = '\0';
-    return buf->str;
-}
-
-char *csn_buf_write_char(buf_t *buf, const char c) {
-    // write a char at 0 position without realloc
+/* TO WRITE
+ */
+char *buf_write_char(buf_t *buf, const char c) {
+    buf->str = xrealloc(buf->str, 2);
     buf->str[0] = c;
     buf->len = 1;
     buf->str[1] = '\0';
@@ -88,22 +85,47 @@ char *csn_buf_write_char(buf_t *buf, const char c) {
     return buf->str;
 }
 
-char *csn_buf_append(buf_t *buf, const char *str) {
-    int old = buf->len;
-    int new_len = strlen(str);
-    buf->len += new_len; // new len
-    buf->str = xrealloc(buf->str, buf->len + 1);
+char *buf_write_mem(buf_t *buf, const char *mem, size_t size) {
+    buf->str = xrealloc(buf->str, size + 1);
+    memcpy(buf->str, mem, size);
+    buf->str[size] = '\0';
+    buf->size = size;
 
-    memcpy(buf->str + old, str, new_len);
+    return buf->str;
+}
+
+char *buf_write_str(buf_t *buf, const char *str) {
+    size_t len = strlen(str);
+    buf_write_mem(buf, str, len);
+
+    return buf->str;
+}
+
+/* TO APPEND TO END
+ */
+
+char *buf_append_char(buf_t *buf, const char c) {
+    buf->str = xrealloc(buf->str, buf->len + 2);
+    buf->str[buf->len] = c;
+    buf->str[++(buf->len)] = '\0';
+
+    return buf->str;
+}
+
+char *buf_append_mem(buf_t *buf, const char *mem, size_t size) {
+    size_t old_pos = buf->size;
+    buf->size += size;
+    buf->str = xrealloc(buf->size + 1);
+
+    memmove(buf->str + old_pos, mem, size);
     buf->str[buf->len] = '\0';
 
     return buf->str;
 }
 
-char *csn_buf_append_char(buf_t *buf, const char c) {
-    buf->str = xrealloc(buf->str, buf->len + 2);
-    buf->str[buf->len] = c;
-    buf->str[++(buf->len)] = '\0';
+char *buf_append_str(buf_t *buf, const char *str) {
+    size_t len = strlen(str);
+    buf_append_mem(buf, str, len);
 
     return buf->str;
 }
