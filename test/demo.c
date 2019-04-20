@@ -22,6 +22,10 @@ int main(int argc, char *argv[]) {
     csn_ctx_t *ctx = csn_init();
     csn_result_t *result = csn_search(ctx, argv[1],
             SEARCH_SONG | SEARCH_SORT_BEST_QUALITY | SEARCH_CATEGORY_MUSIC, 1);
+    if (!result) {
+        puts("No results");
+        goto _exit;
+    }
 
     csn_result_t *head = result;
     while (head) {
@@ -29,8 +33,9 @@ int main(int argc, char *argv[]) {
         puts("=====");
         head = head->next;
     }
-
     csn_result_free(result);
+
+_exit:
     csn_free(ctx);
     return 0;
 }

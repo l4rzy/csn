@@ -2,6 +2,9 @@
 #define _CSN_INTERNAL_H_
 
 #include "csn.h"
+#include <string.h>
+#include <assert.h>
+#include <json-c/json_tokener.h>
 
 #ifdef ENABLE_DEBUG
 #include <time.h>
@@ -11,13 +14,13 @@ clock_t _t_start, _t_end;
 #endif
 
 /* chiasenhac.com */
-#define CSN_SEARCH_URL          "http://search.chiasenhac.vn/search.php"
+#define CSN_SEARCH_URL          "https://chiasenhac.vn/search/real?"
 #define CSN_HOME_URL            "http://old.chiasenhac.vn"
 
 #define CSN_HOT_VIDEOS_XPATH    "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[1]/div[2]"
 #define CSN_HOT_VN_XPATH        "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[2]/div[2]"
 #define CSN_HOT_USUK_XPATH      "/html/body/div[1]/div/div[3]/div/div[4]/div/div[5]/div/div[2]/div[2]"
-#define CSN_SEARCH_XPATH        "/html/body/div[1]/div/div[3]/div/div/div[5]/div[1]/div[3]/div[2]/table"
+#define CSN_SEARCH_XPATH        "//*[@id=\"nav-tabContent\"]"
 
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \
@@ -48,7 +51,7 @@ clock_t _t_start, _t_end;
 #define ASSERT(expr) \
     do { \
         assert(expr); \
-        printf("\033[0;32m[OK]\033[0m %s\n", #expr); \
+        printf("\033[0;32m[OK]\033[0m (%s:%d) %s\n", __FILE__, __LINE__, #expr); \
     } while (0);
 
 
@@ -66,41 +69,6 @@ clock_t _t_start, _t_end;
 #define CSN_S_SEARCH_CATEGORY_BEAT              "playback"
 #define CSN_S_SEARCH_CATEGORY_VIDEO             "video"
 
-/* for xpath navigation in DOM
- */
-typedef struct _csn_xpath_t {
-    buf_t *tag;
-    bool is_root;
-    int index;
-    struct _csn_xpath_t *next;
-} csn_xpath_t;
-
-/* a queue of tidynodes
- */
-typedef struct _csn_node_t {
-    TidyNode tnode;
-    struct _csn_node_t *next;
-} csn_node_t;
-
-typedef struct _csn_queue_t {
-    csn_node_t *head;
-    csn_node_t *tail;
-    int len;
-} csn_queue_t;
-
-/* xpath functions */
-csn_xpath_t *csn_xpath_parse(const char *);
-csn_xpath_t *csn_xpath_new();
-TidyNode csn_xpath_traverse(TidyNode, csn_xpath_t *);
-void csn_xpath_free(csn_xpath_t *);
-
-/* queue functions */
-csn_node_t *csn_node_new();
-csn_queue_t *csn_queue_new();
-TidyNode csn_enqueue(csn_queue_t *, TidyNode);
-TidyNode csn_dequeue(csn_queue_t *);
-void csn_queue_free(csn_queue_t *);
-
 /* alloc functions */
 void *_xalloc(size_t);
 void *_xcalloc(size_t);
@@ -114,7 +82,7 @@ void *_xrealloc(void *, size_t);
 buf_t *buf_new_size(size_t);
 buf_t *buf_new_mem(const char *, size_t);
 buf_t *buf_new_str(const char *);
-buf_t *buf_new_possess(const char *);
+buf_t *buf_new_possess(char *);
 
 char *buf_write_char(buf_t *, const char);
 char *buf_write_mem(buf_t *, const char *, size_t);
@@ -129,7 +97,6 @@ int buf_free(buf_t *);
 
 /* parsing functions
  */
-csn_result_t *parse_song_search_result(TidyDoc);
 
 /* function to create result
  */

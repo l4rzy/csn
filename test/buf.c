@@ -2,7 +2,7 @@
 #include "../src/internal.h"
 
 void print_buf(buf_t *b) {
-    printf("\"%s\"\nlen: %d\n\n", b->str, b->len);
+    printf("\"%s\"\nlen: %ld\n\n", b->str, b->len);
 }
 
 char *construct_sanitized_string(char c, int len) {
@@ -23,7 +23,6 @@ wants to live humbly for one.";
     buf_t *buf = buf_new_str(saying);
     ASSERT(!memcmp(buf->str, saying, saying_len));
     ASSERT(buf->len == saying_len);
-    free(temp);
 
     buf_write_char(buf, 'A');
     ASSERT(buf->len == 1);
@@ -50,7 +49,7 @@ wants to live humbly for one.";
     buf = buf_new_possess(temp);
     print_buf(buf);
     ASSERT(buf->len == 1024);
-    free(temp);
+    // no need to free temp since it was possessed by buf
 
     temp = construct_sanitized_string('\n', 1024);
     temp[1] = 'a';

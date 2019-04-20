@@ -1,6 +1,6 @@
 # Description
 * A WIP C library for fetching data from [chiasenhac.com](http://chiasenhac.com)
-* Built upon [libcurl](https://curl.haxx.se) and [libtidy](https://www.html-tidy.org/)
+* Built upon [libcurl](https://curl.haxx.se), [json-c](https://github.com/json-c/json-c) and [libxml2](https://gitlab.gnome.org/GNOME/libxml2)
 
 ## Features
 * Searching for audio/video/album
@@ -8,25 +8,24 @@
 * Get download link for audio/video/album
 
 ## APIs that work so far
-- [x] csn_search
+- [-] csn_search
 - [ ] csn_fetch_hot
-- [ ] csn_fetch_song_info_url
-- [ ] csn_fetch_album_info_url
-- [ ] csn_fetch_song_info
-- [ ] csn_fetch_album_info
+- [-] csn_fetch_song_info_url
+- [-] csn_fetch_album_info_url
+- [-] csn_fetch_song_info
+- [-] csn_fetch_album_info
 - [ ] csn_batch_fetch_song_info
 
 ## Build
+Make sure you have `libcurl`, `json-c` and `libxml2` development packages is available, then run
 ```sh
 $ meson build
 $ cd build && ninja
 ```
 
 ## Demo
-Since this is a library, it's neccessary to build a demo program to test
 ```sh
-$ make
-$ export LD_LIBRARY_PATH=./build
+$ cd build
 $ ./demo "shallow"
 ```
 The result should look like this
@@ -39,6 +38,3 @@ $ ninja test
 
 ## Licence
 MIT
-
-## Author(s)
-* l4rzy (l4.foss@gmail.com)

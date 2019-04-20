@@ -6,50 +6,48 @@ extern "C" {
 
 #include <stdio.h>
 #include <stddef.h>
-#include <tidy.h>
-#include <tidybuffio.h>
+#include <libxml/HTMLparser.h>
 #include <curl/curl.h>
 #include <stdbool.h>
 
 enum {
-    CSN_TYPE_SONG,
-    CSN_TYPE_BEAT,
-    CSN_TYPE_VIDEO,
+    TYPE_SONG,
+    TYPE_BEAT,
+    TYPE_VIDEO,
 };
 
 enum {
-    CSN_HOT_VN,
-    CSN_HOT_USUK,
-    CSN_HOT_CLIP
+    CAT_PLAYBACK                = 2,
+    CAT_VIETNAM                 = 3,
+    CAT_USUK                    = 4,
+    CAT_CHINA                   = 5,
+    CAT_KPOP                    = 6,
+    CAT_JPOP                    = 7,
+    CAT_FRENCH                  = 8,
+    CAT_OTHER                   = 9
 };
 
 enum {
     SEARCH_ARTIST               = 1 << 1,
     SEARCH_SONG                 = 1 << 2,
-    SEARCH_COMPOSER             = 1 << 3,
-    SEARCH_ALBUM                = 1 << 4,
-    SEARCH_LYRICS               = 1 << 5,
-
-    SEARCH_SORT_MOST_LOVED      = 1 << 6,
-    SEARCH_SORT_BEST_QUALITY    = 1 << 7,
-    SEARCH_SORT_LATEST          = 1 << 8,
-
-    SEARCH_CATEGORY_MUSIC       = 1 << 9,
-    SEARCH_CATEGORY_BEAT        = 1 << 10,
-    SEARCH_CATEGORY_VIDEO       = 1 << 11
+    SEARCH_ALBUM                = 1 << 3,
+    SEARCH_VIDEO                = 1 << 4,
+    SEARCH_BEAT                 = 1 << 5
+    SEARCH_ALL                  = SEARCH_ARTIST | SEARCH_SONG | SEARCH_ALBUM |\
+                                SEARCH_VIDEO | SEARCH_BEAT
 };
 
 typedef struct _buf_t {
     char *str;
-    int len;
+    size_t len;
 } buf_t;
 
 typedef struct _csn_ctx_t {
     CURL *curl;
     char curl_errbuf[CURL_ERROR_SIZE];
-    TidyDoc tdoc;
-    TidyBuffer docbuf;
-    TidyBuffer tidy_errbuf;
+    htmlParserCtxtPtr parser_ctx;
+    htmlDocPtr docptr;
+    buf_t *docbuf;
     int err;
 } csn_ctx_t;
 
@@ -61,12 +59,15 @@ typedef struct _csn_download_t {
 
 typedef struct _csn_song_t {
     int type; // either SONG BEAT or VIDEO
+    uint32_t id;
+    uint32_t cat_id;
     buf_t *title;
     buf_t *artist;
     buf_t *link;
-    buf_t *duration;
     buf_t *max_quality;
-    buf_t *download_count;
+    buf_t *len;
+    uint32_t listen_count;
+    uint32_t download_count;
 } csn_song_t;
 
 typedef struct _csn_album_t {
@@ -84,8 +85,6 @@ typedef struct _csn_song_info_t {
     buf_t *year;
     csn_album_t *album;
     buf_t *lyrics;
-    csn_download_t **download;
-    int num_download;
 } csn_song_info_t;
 
 typedef struct _csn_album_info_t {

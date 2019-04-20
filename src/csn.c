@@ -5,10 +5,10 @@ int g_search_options;
 /* === STATIC FUNCTIONS === */
 /* write curl output to buffer that's ready to be used by tidy
  */
-static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
+static uint write_cb(char *in, uint size, uint nmemb, buf_t *out) {
     uint r;
     r = size * nmemb;
-    tidyBufAppend(out, in, r);
+    buf_write_mem(out, in, r);
     return r;
 }
 
@@ -16,41 +16,36 @@ static uint write_cb(char *in, uint size, uint nmemb, TidyBuffer *out) {
 csn_ctx_t *csn_init() {
     logs("\033[0;33mDEBUG MODE IS ENABLED\n\033[0m");
     logs("\033[0;33mIF YOU DON'T WANT DEBUG INFO, RECOMPILE WITHOUT ENABLE_DEBUG\n\033[0m");
+
+    // check ABI mismatch
+    LIBXML_TEST_VERSION
+
     csn_ctx_t *ctx = xalloc(sizeof(csn_ctx_t));
-    bzero(&ctx->docbuf, sizeof(ctx->docbuf));
-    bzero(&ctx->tidy_errbuf, sizeof(ctx->tidy_errbuf));
+    ctx->docbuf = buf_new_size(0);
+    ctx->parser_ctx = htmlCreateMemoryParserCtxt(ctx->docbuf->str, ctx->docbuf->len);
 
     ctx->curl = curl_easy_init();
     // set some curl options
     curl_easy_setopt(ctx->curl, CURLOPT_ERRORBUFFER, ctx->curl_errbuf);
-    curl_easy_setopt(ctx->curl, CURLOPT_NOPROGRESS, 1L);
+    // TODO: custom user agent
+    curl_easy_setopt(ctx->curl, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0");
 #ifdef ENABLE_DEBUG
+    curl_easy_setopt(ctx->curl, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(ctx->curl, CURLOPT_VERBOSE, 1L);
 #else
+    curl_easy_setopt(ctx->curl, CURLOPT_NOPROGRESS, 1L);
     curl_easy_setopt(ctx->curl, CURLOPT_VERBOSE, 0L);
 #endif
 
     curl_easy_setopt(ctx->curl, CURLOPT_WRITEFUNCTION, write_cb);
-
-    ctx->tdoc = tidyCreate();
-    tidyOptSetBool(ctx->tdoc, TidyForceOutput, yes); /* try harder */
-    tidyOptSetInt(ctx->tdoc, TidyWrapLen, 4096);
-    tidySetErrorBuffer(ctx->tdoc, &ctx->tidy_errbuf);
-    tidyBufInit(&ctx->docbuf);
-
-    curl_easy_setopt(ctx->curl, CURLOPT_WRITEDATA, &ctx->docbuf);
+    curl_easy_setopt(ctx->curl, CURLOPT_WRITEDATA, ctx->docbuf);
     logf("Done initializing context at %p\n", ctx);
     return ctx;
 }
 
 int csn_free(csn_ctx_t *ctx) {
+    buf_free(ctx->docbuf);
     curl_easy_cleanup(ctx->curl);
-    if (&ctx->docbuf)
-        tidyBufFree(&ctx->docbuf);
-    if (&ctx->tidy_errbuf)
-        tidyBufFree(&ctx->tidy_errbuf);
-    tidyRelease(ctx->tdoc);
-
     logs("Done freeing context\n");
     return 0;
 }
@@ -62,30 +57,20 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
 
     curl_easy_setopt(ctx->curl, CURLOPT_URL, surl);
     curl_free(search_string);
-    free(surl);
+
     // perform the curl
     logs("Getting data from chiasenhac\n");
     ctx->err = curl_easy_perform(ctx->curl);
     if (!ctx->err) {
-        ctx->err = tidyParseBuffer(ctx->tdoc, &ctx->docbuf); /* parse the input */
-        if (ctx->err >= 0) {
-            ctx->err = tidyCleanAndRepair(ctx->tdoc); /* fix any problems */
-            if (ctx->err >= 0) {
-                ctx->err = tidyRunDiagnostics(ctx->tdoc); /* load tidy error buffer */
-                if (ctx->err >= 0) {
-                    if (g_search_options & SEARCH_ALBUM) {
-                        return NULL; // TODO:
-                    }
-                    else {
-                        return parse_song_search_result(ctx->tdoc); /* walk the tree */
-                    }
-                }
-            }
-        }
+        ctx->docptr = htmlCtxtReadMemory(ctx->parser_ctx, ctx->docbuf->str,
+            ctx->docbuf->len, NULL, surl, 0);
+        htmlDocContentDumpOutput(ctx->docbuf->str, ctx->docptr, NULL);
+        // parsing to tree and get data
     }
     else {
         fatalf("Could not get data from `%s`\n", surl);
     }
+    free(surl);
     return NULL;
 }
 
@@ -175,9 +160,9 @@ void csn_result_free(csn_result_t *r) {
 
 void csn_album_info_free(csn_album_info_t *ai) {
     if (ai) {
-        csn_buf_free(ai->title);
-        csn_buf_free(ai->artist);
-        csn_buf_free(ai->year);
+        buf_free(ai->title);
+        buf_free(ai->artist);
+        buf_free(ai->year);
 
         for (int i = 0; i < ai->num_song; ++i) {
             csn_song_free(ai->song[i]);
@@ -189,9 +174,9 @@ void csn_album_info_free(csn_album_info_t *ai) {
 
 static void csn_download_free(csn_download_t *d) {
     if (d) {
-        csn_buf_free(d->quality);
-        csn_buf_free(d->url);
-        csn_buf_free(d->size);
+        buf_free(d->quality);
+        buf_free(d->url);
+        buf_free(d->size);
 
         free(d);
     }
@@ -199,14 +184,14 @@ static void csn_download_free(csn_download_t *d) {
 
 void csn_song_info_free(csn_song_info_t *si) {
     if (si) {
-        csn_buf_free(si->title);
-        csn_buf_free(si->artist);
-        csn_buf_free(si->composer);
-        csn_buf_free(si->year);
+        buf_free(si->title);
+        buf_free(si->artist);
+        buf_free(si->composer);
+        buf_free(si->year);
 
         csn_album_free(si->album);
 
-        csn_buf_free(si->lyrics);
+        buf_free(si->lyrics);
 
         for (int i = 0; i < si->num_download; ++i) {
             csn_download_free(si->download[i]);
@@ -218,12 +203,12 @@ void csn_song_info_free(csn_song_info_t *si) {
 
 void csn_song_free(csn_song_t *s) {
     if (s) {
-        csn_buf_free(s->title);
-        csn_buf_free(s->artist);
-        csn_buf_free(s->link);
-        csn_buf_free(s->duration);
-        csn_buf_free(s->max_quality);
-        csn_buf_free(s->download_count);
+        buf_free(s->title);
+        buf_free(s->artist);
+        buf_free(s->link);
+        buf_free(s->duration);
+        buf_free(s->max_quality);
+        buf_free(s->download_count);
 
         free(s);
     }
@@ -231,10 +216,10 @@ void csn_song_free(csn_song_t *s) {
 
 void csn_album_free(csn_album_t *a) {
     if (a) {
-        csn_buf_free(a->title);
-        csn_buf_free(a->link);
-        csn_buf_free(a->cover);
-        csn_buf_free(a->max_quality);
+        buf_free(a->title);
+        buf_free(a->link);
+        buf_free(a->cover);
+        buf_free(a->max_quality);
 
         free(a);
     }

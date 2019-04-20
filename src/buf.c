@@ -1,40 +1,6 @@
 #include "internal.h"
 #include <ctype.h>
 
-/* trim string inplace, so no need to allocate new memory
- */
-static char *string_trim(char *str) {
-    char *head, *tail;
-    head = str;
-    while (1) {
-        if (isspace(*head)) {
-            ++head;
-            continue;
-        }
-        else {
-            break;
-        }
-    }
-
-    tail = str + strlen(str) - 1; // last char
-    while (1) {
-        if (isspace(*tail)) {
-            --tail;
-            continue;
-        }
-        else {
-            break;
-        }
-    }
-
-    memmove(str, head, tail-head+1);
-    xrealloc(str, tail-head+2);
-    // set last char to null
-    str[tail-head+1] = '\0';
-
-    return str;
-}
-
 /* TO CREATE NEW
  */
 // new buffer that has size of `size`
@@ -65,7 +31,7 @@ buf_t *buf_new_str(const char *str) {
 }
 
 // new buffer that possesses an existed string
-buf_t *buf_new_possess(const char *str) {
+buf_t *buf_new_possess(char *str) {
     int len = strlen(str);
     buf_t *buf = xalloc(sizeof(buf_t));
     buf->len = len;
@@ -89,7 +55,7 @@ char *buf_write_mem(buf_t *buf, const char *mem, size_t size) {
     buf->str = xrealloc(buf->str, size + 1);
     memcpy(buf->str, mem, size);
     buf->str[size] = '\0';
-    buf->size = size;
+    buf->len = size;
 
     return buf->str;
 }
@@ -113,9 +79,9 @@ char *buf_append_char(buf_t *buf, const char c) {
 }
 
 char *buf_append_mem(buf_t *buf, const char *mem, size_t size) {
-    size_t old_pos = buf->size;
-    buf->size += size;
-    buf->str = xrealloc(buf->size + 1);
+    size_t old_pos = buf->len;
+    buf->len += size;
+    buf->str = xrealloc(buf->str, buf->len + 1);
 
     memmove(buf->str + old_pos, mem, size);
     buf->str[buf->len] = '\0';
@@ -130,13 +96,52 @@ char *buf_append_str(buf_t *buf, const char *str) {
     return buf->str;
 }
 
-int csn_buf_trim(buf_t *buf) {
-    string_trim(buf->str);
-    buf->len = strlen(buf->str);
+int buf_trim(buf_t *buf) {
+    char *head, *tail;
+
+    // trim for head
+    head = buf->str;
+    while (1) {
+        if (isspace(*head)) {
+            ++head;
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+    logf("head at %p\n", head);
+
+    // trim from tail
+    tail = buf->str + buf->len - 1; // last char
+    while (1) {
+        if (isspace(*tail)) {
+            --tail;
+            continue;
+        }
+        else {
+            break;
+        }
+    }
+    logf("tail at %p\n", tail);
+
+    // edge case
+    if (tail < head) {
+        buf->str = xrealloc(buf->str, 1);
+        buf->str[0] = '\0';
+        buf->len = 0;
+        return 0;
+    }
+
+    buf->len = tail - head + 1;
+    memmove(buf->str, head, buf->len);
+    buf->str = xrealloc(buf->str, buf->len+1);
+    // set last char to null
+    buf->str[buf->len] = '\0';
     return 0;
 }
 
-int csn_buf_free(buf_t *buf) {
+int buf_free(buf_t *buf) {
     if (buf) {
         free(buf->str);
         free(buf);

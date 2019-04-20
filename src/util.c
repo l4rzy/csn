@@ -26,36 +26,44 @@ void *_xrealloc(void *ptr, size_t new_size) {
     return ptr;
 }
 
+char *build_search_url(const char *str, int options, int limit) {
+    g_search_options = options;
+
+    char temp[2048];
+    sprintf(temp, CSN_SEARCH_URL, str);
+    return strdup(temp);
+}
+
 /* builds search url from options, currently lthe limit options is disable
  * but in the future, maybe we'll make more than one request to get some
  * further pages in order to get the number of results as user wanted
  */
-char *build_search_url(const char *str, int options, int limit) {
+char *_build_search_url(const char *str, int options, int limit) {
 #ifdef ENABLE_DEBUG
     _t_start = clock();
 #endif
     g_search_options = options;
 
-    buf_t *search_type = csn_buf_new(0);
-    buf_t *search_sort = csn_buf_new(0);
-    buf_t *search_cat  = csn_buf_new(0);
+    buf_t *search_type = buf_new_size(0);
+    buf_t *search_sort = buf_new_size(0);
+    buf_t *search_cat  = buf_new_size(0);
 
     /* failed to do it the more rational way due to the limitation of
      * C macro system
      */
 #define TYPE_CASE(op, s) \
     if (options & op) { \
-        csn_buf_write(search_type, s); \
+        buf_write_str(search_type, s); \
     }
 
 #define SORT_CASE(op, s) \
     if (options & op) { \
-        csn_buf_write(search_sort, s); \
+        buf_write_str(search_sort, s); \
     }
 
 #define CAT_CASE(op, s) \
     if (options & op) { \
-        csn_buf_write(search_cat, s); \
+        buf_write_str(search_cat, s); \
     }
 
     TYPE_CASE(SEARCH_ARTIST, CSN_S_SEARCH_ARTIST);
@@ -86,88 +94,12 @@ char *build_search_url(const char *str, int options, int limit) {
 
     /* free stuff
      */
-    csn_buf_free(search_type);
-    csn_buf_free(search_sort);
-    csn_buf_free(search_cat);
+    buf_free(search_type);
+    buf_free(search_sort);
+    buf_free(search_cat);
 #ifdef ENABLE_DEBUG
     _t_end = clock();
     logf("Took %ld to complete\n", _t_end - _t_start);
 #endif
     return strdup(temp);
 }
-
-/* === queue implementation === */
-csn_node_t *csn_node_new() {
-    csn_node_t *node = xalloc(sizeof(csn_node_t));
-    return node;
-}
-
-csn_queue_t *csn_queue_new() {
-    csn_queue_t *queue = xalloc(sizeof(csn_queue_t));
-    return queue;
-}
-
-TidyNode csn_enqueue(csn_queue_t *queue, TidyNode n) {
-    csn_node_t *new_node = csn_node_new();
-    new_node->tnode = n;
-    new_node->next = NULL;
-
-    // queue is empty
-    if (!queue->head) {
-        queue->head = new_node;
-        queue->tail = new_node;
-    }
-    // since we saved the tail node, insertion time complexity is
-    // O(1) instead of O(n)
-    else {
-        queue->tail->next = new_node;
-        queue->tail = new_node;
-    }
-    ++queue->len;
-    return n;
-}
-
-TidyNode csn_dequeue(csn_queue_t *q) {
-    if (!q) {
-        return NULL;
-    }
-    TidyNode save = q->head->tnode;
-    csn_node_t *new_head = q->head->next;
-    free(q->head);
-    q->head = new_head;
-    --q->len;
-    // return new head
-    return save;
-}
-
-void csn_queue_free(csn_queue_t *q) {
-    csn_node_t *ptr = q->head;
-    csn_node_t *tmp;
-    while (1) {
-        if (!ptr) {
-            free(q);
-            break;
-        }
-        tmp = ptr->next;
-        free(ptr);
-        ptr = tmp;
-    }
-}
-
-#ifdef ENABLE_DEBUG
-void csn_queue_print(csn_queue_t *q) {
-    if (!q) {
-        logs("Empty queue!\n");
-    }
-
-    int count = 0;
-    csn_node_t *ptr = q->head;
-    logf("Queue at %p has %d node(s)\n", q, q->len);
-    while (ptr != q->tail) {
-        logf("node #%d at %p", count++, ptr);
-        ptr = ptr->next;
-    }
-    // print the tail
-    logf("Tail is at %p\n", q->tail);
-}
-#endif

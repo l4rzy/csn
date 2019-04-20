@@ -1,6 +1,6 @@
 ## common
 project('csn', 'c',
-  version : '0.1.0',
+  version : '0.1.0a',
   default_options : ['warning_level=1'])
 
 csn_version = meson.project_version()
@@ -9,21 +9,19 @@ csn_version = meson.project_version()
 lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0', '-fuse-ld=gold']
 
 ## dirs
-incdir = include_directories('inc')
+incdir = include_directories('inc', '/usr/include/libxml2')
 srcdir = include_directories('src')
 
 ## dependencies
 curl_dep = dependency('libcurl')
-tidy_dep = dependency('tidy', version: '>=5.7')
+tidy_dep = dependency('libxml-2.0')
 
 lib_deps = [curl_dep, tidy_dep]
 
 ## src
 lib_sources = files(
   'src/csn.c',
-  'src/parser.c',
   'src/buf.c',
-  'src/xpath.c',
   'src/util.c',
 )
 
@@ -41,21 +39,14 @@ test_buf = executable('test_buf',
   include_directories: incdir,
 )
 
-test_queue = executable('test_queue',
-  files('test/queue.c'),
-  link_with: shlib,
-  include_directories: incdir,
-)
-
-test_xpath = executable('test_xpath',
-  files('test/xpath.c'),
+## demo
+demo = executable('demo',
+  files('test/demo.c'),
   link_with: shlib,
   include_directories: incdir,
 )
 
 test('buf_t functions', test_buf)
-test('queue functions', test_queue)
-test('xpath functions', test_xpath)
 
 # Make this library usable from the system's
 # package manager.
