@@ -15,12 +15,8 @@ clock_t _t_start, _t_end;
 
 /* chiasenhac.com */
 #define CSN_SEARCH_URL          "https://chiasenhac.vn/search/real?"
-#define CSN_HOME_URL            "http://old.chiasenhac.vn"
-
-#define CSN_HOT_VIDEOS_XPATH    "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[1]/div[2]"
-#define CSN_HOT_VN_XPATH        "/html/body/div[1]/div/div[3]/div/div[1]/div/div[5]/div/div[2]/div[2]"
-#define CSN_HOT_USUK_XPATH      "/html/body/div[1]/div/div[3]/div/div[4]/div/div[5]/div/div[2]/div[2]"
-#define CSN_SEARCH_XPATH        "//*[@id=\"nav-tabContent\"]"
+#define CSN_SEARCH_FMT          "q=%s&type=json&rows=%d&view_all=true"
+#define CSN_HOME_URL            "https://chiasenhac.vn"
 
 #ifdef ENABLE_DEBUG
 #define logf(fmt, ...) \
@@ -101,11 +97,12 @@ int buf_free(buf_t *);
 /* function to create result
  */
 csn_download_t *csn_download_new();
-csn_song_t *csn_song_new(int type);
+csn_music_t *csn_music_new();
 csn_album_t *csn_album_new();
-csn_song_info_t *csn_song_info_new();
+csn_music_info_t *csn_music_info_new();
 csn_album_info_t *csn_album_info_new();
-csn_result_t *csn_result_new(bool is_song);
+csn_artist_t *csn_artist_new();
+csn_result_t *csn_result_new(int type);
 
 /* other utilities
  */

@@ -3,7 +3,7 @@
 int g_search_options;
 
 /* === STATIC FUNCTIONS === */
-/* write curl output to buffer that's ready to be used by tidy
+/* write curl output to buffer
  */
 static uint write_cb(char *in, uint size, uint nmemb, buf_t *out) {
     uint r;
@@ -13,22 +13,30 @@ static uint write_cb(char *in, uint size, uint nmemb, buf_t *out) {
 }
 
 /* === API PUBLIC FUNCTIONS === */
-csn_ctx_t *csn_init() {
+csn_ctx_t *csn_init(const char *agent) {
     logs("\033[0;33mDEBUG MODE IS ENABLED\n\033[0m");
     logs("\033[0;33mIF YOU DON'T WANT DEBUG INFO, RECOMPILE WITHOUT ENABLE_DEBUG\n\033[0m");
 
     // check ABI mismatch
-    LIBXML_TEST_VERSION
+    LIBXML_TEST_VERSION;
 
     csn_ctx_t *ctx = xalloc(sizeof(csn_ctx_t));
     ctx->docbuf = buf_new_size(0);
-    ctx->parser_ctx = htmlCreateMemoryParserCtxt(ctx->docbuf->str, ctx->docbuf->len);
+    ctx->errbuf = buf_new_size(0);
+    ctx->error = 0;
 
     ctx->curl = curl_easy_init();
+
     // set some curl options
     curl_easy_setopt(ctx->curl, CURLOPT_ERRORBUFFER, ctx->curl_errbuf);
-    // TODO: custom user agent
-    curl_easy_setopt(ctx->curl, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0");
+    curl_easy_setopt(ctx->curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    if (agent == NULL) {
+        curl_easy_setopt(ctx->curl, CURLOPT_USERAGENT, DEFAULT_AGENT);
+    }
+    else {
+        curl_easy_setopt(ctx->curl, CURLOPT_USERAGENT, agent);
+    }
 #ifdef ENABLE_DEBUG
     curl_easy_setopt(ctx->curl, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(ctx->curl, CURLOPT_VERBOSE, 1L);
@@ -39,50 +47,56 @@ csn_ctx_t *csn_init() {
 
     curl_easy_setopt(ctx->curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(ctx->curl, CURLOPT_WRITEDATA, ctx->docbuf);
+
     logf("Done initializing context at %p\n", ctx);
     return ctx;
 }
 
 int csn_free(csn_ctx_t *ctx) {
     buf_free(ctx->docbuf);
+    buf_free(ctx->errbuf);
     curl_easy_cleanup(ctx->curl);
+
     logs("Done freeing context\n");
     return 0;
 }
 
 csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit) {
+    if (!ctx || !str) {
+        return NULL;
+    }
+
+    g_search_options = options;
+
     // build search url
     char *search_string = curl_easy_escape(ctx->curl, str, strlen(str));
-    char *surl = build_search_url(search_string, options, limit);
+    char temp[2048];
+    sprintf(temp, CSN_SEARCH_URL CSN_SEARCH_FMT, search_string, limit);
 
-    curl_easy_setopt(ctx->curl, CURLOPT_URL, surl);
+    curl_easy_setopt(ctx->curl, CURLOPT_URL, temp);
     curl_free(search_string);
 
     // perform the curl
     logs("Getting data from chiasenhac\n");
-    ctx->err = curl_easy_perform(ctx->curl);
-    if (!ctx->err) {
-        ctx->docptr = htmlCtxtReadMemory(ctx->parser_ctx, ctx->docbuf->str,
-            ctx->docbuf->len, NULL, surl, 0);
-        htmlDocContentDumpOutput(ctx->docbuf->str, ctx->docptr, NULL);
-        // parsing to tree and get data
+    ctx->error = curl_easy_perform(ctx->curl);
+    if (!ctx->error) {
+        logs("Got data\n");
     }
     else {
-        fatalf("Could not get data from `%s`\n", surl);
+        fatalf("Could not get data from `%s`\n", temp);
     }
-    free(surl);
     return NULL;
 }
 
-csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type, int limit) {
+csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type) {
     return NULL;
 }
 
-csn_song_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_song_t *s) {
+csn_music_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_music_t *s) {
     return NULL;
 }
 
-csn_song_info_t *csn_fetch_song_info_url(csn_ctx_t *ctx, const char *url) {
+csn_music_info_t *csn_fetch_song_info_url(csn_ctx_t *ctx, const char *url) {
     return NULL;
 }
 
@@ -101,10 +115,8 @@ csn_download_t *csn_download_new() {
     return dl;
 }
 
-csn_song_t *csn_song_new(int type) {
-    csn_song_t *s = xcalloc(sizeof(csn_song_t));
-    s->type = type;
-
+csn_music_t *csn_music_new() {
+    csn_music_t *s = xcalloc(sizeof(csn_music_t));
     return s;
 }
 
@@ -113,8 +125,8 @@ csn_album_t *csn_album_new() {
     return a;
 }
 
-csn_song_info_t *csn_song_info_new() {
-    csn_song_info_t *si = xcalloc(sizeof(csn_song_info_t));
+csn_music_info_t *csn_music_info_new() {
+    csn_music_info_t *si = xcalloc(sizeof(csn_music_info_t));
     return si;
 }
 
@@ -123,15 +135,22 @@ csn_album_info_t *csn_album_info_new() {
     return ai;
 }
 
-csn_result_t *csn_result_new(bool is_song) {
+csn_artist_t *csn_artist_new() {
+   csn_artist_t *a = xcalloc(sizeof(csn_artist_t));
+   return a;
+}
+
+csn_result_t *csn_result_new(int type) {
     csn_result_t *r = xcalloc(sizeof(csn_result_t));
 
-    r->is_song = is_song;
-    if (r->is_song) {
-        r->song = csn_song_new(CSN_TYPE_SONG);
+    if (type == TYPE_MUSIC) {
+        r->music = csn_music_new();
     }
-    else {
+    else if (type == TYPE_ALBUM) {
         r->album = csn_album_new();
+    }
+    else if (type == TYPE_ARTIST) {
+        r->artist = csn_artist_new();
     }
     return r;
 }
@@ -148,10 +167,14 @@ void csn_result_free(csn_result_t *r) {
     // free a linked list
     while (temp) {
         logf("Freeing result at %p\n", temp);
-        if (temp->is_song) {
-            csn_song_free(temp->song);
-        } else {
+        if (temp->type == TYPE_MUSIC) {
+            csn_music_free(temp->music);
+        }
+        else if (temp->type == TYPE_ALBUM) {
             csn_album_free(temp->album);
+        }
+        else if (temp->type == TYPE_ARTIST) {
+            csn_artist_free(temp->artist);
         }
         rptr = rptr->next;
         temp = rptr;
@@ -160,12 +183,10 @@ void csn_result_free(csn_result_t *r) {
 
 void csn_album_info_free(csn_album_info_t *ai) {
     if (ai) {
-        buf_free(ai->title);
-        buf_free(ai->artist);
         buf_free(ai->year);
 
         for (int i = 0; i < ai->num_song; ++i) {
-            csn_song_free(ai->song[i]);
+            csn_music_free(ai->song[i]);
         }
 
         free(ai);
@@ -173,42 +194,35 @@ void csn_album_info_free(csn_album_info_t *ai) {
 }
 
 static void csn_download_free(csn_download_t *d) {
-    if (d) {
-        buf_free(d->quality);
-        buf_free(d->url);
-        buf_free(d->size);
-
-        free(d);
+    for (int i = 0; i < d->num; ++i) {
+        buf_free(d->quality[i]);
+        buf_free(d->url[i]);
+        buf_free(d->size[i]);
     }
 }
 
-void csn_song_info_free(csn_song_info_t *si) {
+void csn_music_info_free(csn_music_info_t *si) {
     if (si) {
-        buf_free(si->title);
-        buf_free(si->artist);
+        csn_download_free(si->download);
+        buf_free(si->duration);
         buf_free(si->composer);
         buf_free(si->year);
 
         csn_album_free(si->album);
+        csn_music_free(si->music);
 
         buf_free(si->lyrics);
-
-        for (int i = 0; i < si->num_download; ++i) {
-            csn_download_free(si->download[i]);
-        }
 
         free(si);
     }
 }
 
-void csn_song_free(csn_song_t *s) {
+void csn_music_free(csn_music_t *s) {
     if (s) {
         buf_free(s->title);
         buf_free(s->artist);
         buf_free(s->link);
-        buf_free(s->duration);
         buf_free(s->max_quality);
-        buf_free(s->download_count);
 
         free(s);
     }
@@ -218,9 +232,19 @@ void csn_album_free(csn_album_t *a) {
     if (a) {
         buf_free(a->title);
         buf_free(a->link);
+        buf_free(a->artist);
         buf_free(a->cover);
         buf_free(a->max_quality);
 
         free(a);
+    }
+}
+
+void csn_artist_free(csn_artist_t *a) {
+    if (a) {
+        buf_free(a->name);
+        buf_free(a->link);
+        buf_free(a->cover);
+        buf_free(a->img);
     }
 }

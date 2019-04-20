@@ -1,17 +1,7 @@
 #include "csn.h"
 
 int print_entry(csn_result_t *r) {
-    if (r->is_song) {
-        printf("link: %s\ntitle: %s\nartist: %s\nlength: %s\nmax_qual: %s\ndownloads: %s\n",
-            r->song->link->str,
-            r->song->title->str,
-            r->song->artist->str,
-            r->song->duration->str,
-            r->song->max_quality->str,
-            r->song->download_count->str
-);
-    }
-    return 0;
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -19,9 +9,11 @@ int main(int argc, char *argv[]) {
         printf("%s [search string]\n", argv[0]);
         return 0;
     }
-    csn_ctx_t *ctx = csn_init();
+    csn_ctx_t *ctx = csn_init(NULL);
     csn_result_t *result = csn_search(ctx, argv[1],
-            SEARCH_SONG | SEARCH_SORT_BEST_QUALITY | SEARCH_CATEGORY_MUSIC, 1);
+            SEARCH_ARTIST | SEARCH_SONG, 10);
+
+    puts(ctx->docbuf->str);
     if (!result) {
         puts("No results");
         goto _exit;
