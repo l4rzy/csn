@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 l4rzy
+ * MIT License
+ */
+
 #ifndef _CSN_H_
 #define _CSN_H_
 #ifdef __cplusplus
@@ -51,9 +56,9 @@ typedef struct _buf_t {
 typedef struct _csn_ctx_t {
     CURL *curl;
     char curl_errbuf[CURL_ERROR_SIZE];
-    buf_t *docbuf;
+    buf_t *docbuf; // response buffer
     buf_t *errbuf; // error buffer
-    int error;
+    int error; // curl error id
 } csn_ctx_t;
 
 typedef struct _csn_download_t {
@@ -63,18 +68,6 @@ typedef struct _csn_download_t {
     buf_t **size;
 } csn_download_t;
 
-typedef struct _csn_music_t {
-    int type; // either SONG BEAT or VIDEO
-    uint32_t id;
-    uint32_t cat_id;
-    buf_t *title;
-    buf_t *artist;
-    buf_t *link;
-    buf_t *max_quality;
-    uint32_t listen_count;
-    uint32_t download_count;
-} csn_music_t;
-
 typedef struct _csn_album_t {
     buf_t *title;
     buf_t *link;
@@ -83,15 +76,31 @@ typedef struct _csn_album_t {
     buf_t *max_quality;
 } csn_album_t;
 
+typedef struct _csn_music_base_t {
+    int type; // either SONG BEAT or VIDEO
+    buf_t *link;
+    buf_t *title;
+    buf_t *artist;
+} csn_music_base_t;
+
+typedef struct _csn_music_t {
+    csn_music_base_t *base;
+    buf_t *max_quality;
+    uint32_t id;
+    uint32_t cat_id;
+    uint32_t listen_count;
+    uint32_t download_count;
+} csn_music_t;
+
 typedef struct _csn_music_info_t {
     csn_download_t *download;
-
     csn_music_t *music;
+    csn_album_t *album;
 
     buf_t *duration;
     buf_t *composer;
     buf_t *year;
-    csn_album_t *album;
+
     buf_t *lyrics;
 } csn_music_info_t;
 
@@ -131,13 +140,11 @@ int csn_free(csn_ctx_t *);
 
 /* API functions
  */
-csn_result_t *csn_search(csn_ctx_t *, const char *, int, int);
-csn_result_t *csn_fetch_hot(csn_ctx_t *, int);
+csn_result_t     *csn_search(csn_ctx_t *, const char *, int, int);
 csn_music_info_t *csn_fetch_music_info_url(csn_ctx_t *, const char *);
 csn_album_info_t *csn_fetch_album_info_url(csn_ctx_t *, const char *);
 csn_music_info_t *csn_fetch_music_info(csn_ctx_t *, csn_music_t *);
 csn_album_info_t *csn_fetch_album_info(csn_ctx_t *, csn_album_t *);
-csn_music_info_t **csn_fetch_music_info_album(csn_ctx_t *, csn_album_info_t *);
 
 /* functions for free memory
  */
@@ -146,7 +153,7 @@ void csn_album_info_free(csn_album_info_t *);
 void csn_music_info_free(csn_music_info_t *);
 void csn_music_free(csn_music_t *);
 void csn_album_free(csn_album_t *);
-void csn_artist_free(csn_artist_t *);
+
 
 #ifdef __cplusplus
 }

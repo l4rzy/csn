@@ -6,7 +6,8 @@ project('csn', 'c',
 csn_version = meson.project_version()
 
 ## compiler flags
-lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0', '-fuse-ld=gold']
+#lib_args = ['-DENABLE_DEBUG', '-Wall', '-O0', '-fuse-ld=gold']
+lib_args = ['-O3', '-Wall', '-O0', '-fuse-ld=gold']
 
 ## dirs
 incdir = include_directories('inc', '/usr/include/libxml2')
@@ -14,15 +15,17 @@ srcdir = include_directories('src')
 
 ## dependencies
 curl_dep = dependency('libcurl')
-tidy_dep = dependency('libxml-2.0')
+xml2_dep = dependency('libxml-2.0')
+json_dep = dependency('json-c')
 
-lib_deps = [curl_dep, tidy_dep]
+lib_deps = [curl_dep, xml2_dep, json_dep]
 
 ## src
 lib_sources = files(
   'src/csn.c',
   'src/buf.c',
   'src/util.c',
+  'src/search.c'
 )
 
 shlib = shared_library('csn', lib_sources,

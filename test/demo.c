@@ -13,9 +13,7 @@ int main(int argc, char *argv[]) {
     csn_result_t *result = csn_search(ctx, argv[1],
             SEARCH_ARTIST | SEARCH_SONG, 10);
 
-    puts(ctx->docbuf->str);
-    if (!result) {
-        puts("No results");
+   if (!result) {
         goto _exit;
     }
 

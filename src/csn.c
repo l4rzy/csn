@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 l4rzy
+ * MIT License
+ */
+
 #include "internal.h"
 
 int g_search_options;
@@ -62,8 +67,14 @@ int csn_free(csn_ctx_t *ctx) {
 }
 
 csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit) {
-    if (!ctx || !str) {
-        return NULL;
+    if (!ctx) {
+        buf_write_str(ctx->errbuf, "Uninitialized context");
+        goto _search_error;
+    }
+
+    if (!str) {
+        buf_write_str(ctx->errbuf, "NULL search string");
+        goto _search_error;
     }
 
     g_search_options = options;
@@ -81,30 +92,39 @@ csn_result_t *csn_search(csn_ctx_t *ctx, const char *str, int options, int limit
     ctx->error = curl_easy_perform(ctx->curl);
     if (!ctx->error) {
         logs("Got data\n");
+        csn_result_t *ret = parse_search_result(ctx->docbuf, options);
+        if (ret == NULL) {
+            buf_write_str(ctx->errbuf, "Could not parse JSON into result");
+            goto _search_error;
+        }
+        else {
+            return ret;
+        }
     }
     else {
-        fatalf("Could not get data from `%s`\n", temp);
+        logs("Could not get data\n");
+        buf_write_str(ctx->errbuf, "Could not get data due to curl error: ");
+        buf_append_str(ctx->errbuf, ctx->curl_errbuf);
+        goto _search_error;
     }
+
+_search_error:
     return NULL;
 }
 
-csn_result_t *csn_fetch_hot(csn_ctx_t *ctx, int type) {
+csn_music_info_t *csn_fetch_music_info_url(csn_ctx_t *ctx, const char *url) {
     return NULL;
 }
 
-csn_music_info_t *csn_fetch_song_info(csn_ctx_t *ctx, csn_music_t *s) {
-    return NULL;
-}
-
-csn_music_info_t *csn_fetch_song_info_url(csn_ctx_t *ctx, const char *url) {
-    return NULL;
-}
-
-csn_album_info_t *csn_fetch_album_info(csn_ctx_t *ctx, csn_album_t *a) {
+csn_music_info_t *csn_fetch_music_info(csn_ctx_t *ctx, csn_music_t *s) {
     return NULL;
 }
 
 csn_album_info_t *csn_fetch_album_info_url(csn_ctx_t *ctx, const char *url) {
+    return NULL;
+}
+
+csn_album_info_t *csn_fetch_album_info(csn_ctx_t *ctx, csn_album_t *a) {
     return NULL;
 }
 
@@ -117,6 +137,7 @@ csn_download_t *csn_download_new() {
 
 csn_music_t *csn_music_new() {
     csn_music_t *s = xcalloc(sizeof(csn_music_t));
+    s->base = xcalloc(sizeof(csn_music_base_t));
     return s;
 }
 
@@ -126,12 +147,15 @@ csn_album_t *csn_album_new() {
 }
 
 csn_music_info_t *csn_music_info_new() {
-    csn_music_info_t *si = xcalloc(sizeof(csn_music_info_t));
-    return si;
+    csn_music_info_t *mi = xcalloc(sizeof(csn_music_info_t));
+    mi->music = csn_music_new();
+    mi->album = csn_album_new();
+    return mi;
 }
 
 csn_album_info_t *csn_album_info_new() {
     csn_album_info_t *ai = xcalloc(sizeof(csn_album_info_t));
+    ai->album = csn_album_new();
     return ai;
 }
 
@@ -181,23 +205,30 @@ void csn_result_free(csn_result_t *r) {
     }
 }
 
-void csn_album_info_free(csn_album_info_t *ai) {
-    if (ai) {
-        buf_free(ai->year);
-
-        for (int i = 0; i < ai->num_song; ++i) {
-            csn_music_free(ai->song[i]);
-        }
-
-        free(ai);
-    }
-}
-
 static void csn_download_free(csn_download_t *d) {
     for (int i = 0; i < d->num; ++i) {
         buf_free(d->quality[i]);
         buf_free(d->url[i]);
         buf_free(d->size[i]);
+    }
+}
+
+void csn_music_base_free(csn_music_base_t *mb) {
+    if (mb) {
+        buf_free(mb->link);
+        buf_free(mb->title);
+        buf_free(mb->artist);
+
+        free(mb);
+    }
+}
+
+void csn_music_free(csn_music_t *s) {
+    if (s) {
+        csn_music_base_free(s->base);
+        buf_free(s->max_quality);
+
+        free(s);
     }
 }
 
@@ -217,17 +248,6 @@ void csn_music_info_free(csn_music_info_t *si) {
     }
 }
 
-void csn_music_free(csn_music_t *s) {
-    if (s) {
-        buf_free(s->title);
-        buf_free(s->artist);
-        buf_free(s->link);
-        buf_free(s->max_quality);
-
-        free(s);
-    }
-}
-
 void csn_album_free(csn_album_t *a) {
     if (a) {
         buf_free(a->title);
@@ -237,6 +257,19 @@ void csn_album_free(csn_album_t *a) {
         buf_free(a->max_quality);
 
         free(a);
+    }
+}
+
+void csn_album_info_free(csn_album_info_t *ai) {
+    if (ai) {
+        csn_album_free(ai->album);
+        buf_free(ai->year);
+
+        for (int i = 0; i < ai->num_song; ++i) {
+            csn_music_free(ai->song[i]);
+        }
+
+        free(ai);
     }
 }
 

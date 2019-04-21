@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 l4rzy
+ * MIT License
+ */
+
 #ifndef _CSN_INTERNAL_H_
 #define _CSN_INTERNAL_H_
 
@@ -5,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 #include <json-c/json_tokener.h>
+#include <json-c/json_object_iterator.h>
 
 #ifdef ENABLE_DEBUG
 #include <time.h>
@@ -50,20 +56,17 @@ clock_t _t_start, _t_end;
         printf("\033[0;32m[OK]\033[0m (%s:%d) %s\n", __FILE__, __LINE__, #expr); \
     } while (0);
 
+/* for json parser
+ */
+typedef struct json_tokener jt_t;
+typedef struct json_object jo_t;
+typedef struct json_object_iterator jo_iter_t;
 
-#define CSN_S_SEARCH_ARTIST                     "artist"
-#define CSN_S_SEARCH_SONG                       ""
-#define CSN_S_SEARCH_COMPOSER                   "composer"
-#define CSN_S_SEARCH_ALBUM                      "album"
-#define CSN_S_SEARCH_LYRICS                     "lyric"
-
-#define CSN_S_SEARCH_SORT_MOST_LOVED            ""
-#define CSN_S_SEARCH_SORT_BEST_QUALITY          "quality"
-#define CSN_S_SEARCH_SORT_LATEST                "time"
-
-#define CSN_S_SEARCH_CATEGORY_MUSIC             "music"
-#define CSN_S_SEARCH_CATEGORY_BEAT              "playback"
-#define CSN_S_SEARCH_CATEGORY_VIDEO             "video"
+#define CSN_S_SEARCH_CAT_SONG       "music"
+#define CSN_S_SEARCH_CAT_BEAT       "music_playback"
+#define CSN_S_SEARCH_CAT_VIDEO      "video"
+#define CSN_S_SEARCH_CAT_ARTIST     "artist"
+#define CSN_S_SEARCH_CAT_ALBUM      "album"
 
 /* alloc functions */
 void *_xalloc(size_t);
@@ -93,8 +96,9 @@ int buf_free(buf_t *);
 
 /* parsing functions
  */
+csn_result_t *parse_search_result(buf_t *docbuf, int options);
 
-/* function to create result
+/* function to create and delete result
  */
 csn_download_t *csn_download_new();
 csn_music_t *csn_music_new();
@@ -104,9 +108,7 @@ csn_album_info_t *csn_album_info_new();
 csn_artist_t *csn_artist_new();
 csn_result_t *csn_result_new(int type);
 
-/* other utilities
- */
-char *build_search_url(const char *, int, int);
+void csn_artist_free(csn_artist_t *);
 
 extern int g_search_options;
 

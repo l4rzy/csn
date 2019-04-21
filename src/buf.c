@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2019 l4rzy
+ * MIT License
+ */
+
 #include "internal.h"
 #include <ctype.h>
 
@@ -96,6 +101,7 @@ char *buf_append_str(buf_t *buf, const char *str) {
     return buf->str;
 }
 
+// TODO: fix valgrind memory error here
 int buf_trim(buf_t *buf) {
     char *head, *tail;
 

@@ -8,13 +8,11 @@
 * Get download link for audio/video/album
 
 ## APIs that work so far
-- [-] csn_search
-- [ ] csn_fetch_hot
-- [-] csn_fetch_song_info_url
-- [-] csn_fetch_album_info_url
-- [-] csn_fetch_song_info
-- [-] csn_fetch_album_info
-- [ ] csn_batch_fetch_song_info
+- [x] csn_search
+- [] csn_fetch_music_info_url
+- [] csn_fetch_album_info_url
+- [] csn_fetch_music_info
+- [] csn_fetch_album_info
 
 ## Build
 Make sure you have `libcurl`, `json-c` and `libxml2` development packages is available, then run
@@ -35,6 +33,9 @@ The result should look like this
 ```sh
 $ ninja test
 ```
+
+## Documentations
+Check (Wiki)[https://github.com/l4rzy/csn/wiki]
 
 ## Licence
 MIT
