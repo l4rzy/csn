@@ -9,10 +9,10 @@
 
 ## APIs that work so far
 - [x] csn_search
-- [] csn_fetch_music_info_url
-- [] csn_fetch_album_info_url
-- [] csn_fetch_music_info
-- [] csn_fetch_album_info
+- [ ] csn_fetch_music_info_url
+- [ ] csn_fetch_album_info_url
+- [ ] csn_fetch_music_info
+- [ ] csn_fetch_album_info
 
 ## Build
 Make sure you have `libcurl`, `json-c` and `libxml2` development packages is available, then run
@@ -35,7 +35,7 @@ $ ninja test
 ```
 
 ## Documentations
-Check (Wiki)[https://github.com/l4rzy/csn/wiki]
+Check [Wiki](https://github.com/l4rzy/csn/wiki)
 
 ## Licence
 MIT
